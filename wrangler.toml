@@ -1,0 +1,14 @@
+name = "wokpost"
+compatibility_date = "2026-02-20"
+compatibility_flags = ["nodejs_compat"]
+
+pages_build_output_dir = ".open-next/assets"
+
+[[kv_namespaces]]
+binding = "FEED_CACHE"
+id = "f0cadae7a9eb4382a8765699b81549e4"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wokpost-db"
+database_id = "dd4d36cc-4f5b-4c69-a9ac-208cd2c22131"
