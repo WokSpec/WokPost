@@ -5,12 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "cf:build": "opennextjs-cloudflare build",
-    "deploy": "opennextjs-cloudflare build && wrangler pages deploy .open-next/assets --project-name wokpost --branch main"
+    "build:cf": "npx @opennextjs/cloudflare build --openNextConfigPath ./open-next.config.ts && cp .open-next/worker.js .open-next/assets/_worker.js && cp -r .open-next/cloudflare .open-next/assets/ && cp -r .open-next/server-functions .open-next/assets/ && cp -r .open-next/middleware .open-next/assets/ && cp -r .open-next/.build .open-next/assets/ && node -e \"const r={version:1,include:['/*'],exclude:['/_next/static/*','/favicon.ico','/_next/image*']};require('fs').writeFileSync('.open-next/assets/_routes.json',JSON.stringify(r))\"",
+    "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets --project-name wokpost --branch main"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.3.3",
+    "@opennextjs/cloudflare": "^1.16.5",
     "next": "^15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
