@@ -3,6 +3,7 @@ import { CATEGORIES } from '@/lib/feed/types';
 import type { FeedItem } from '@/lib/feed/types';
 import { AdSlot } from './AdSlot';
 import { NewsletterFormInline } from './NewsletterForm';
+import { BookmarkButton } from './BookmarkButton';
 
 export function SiteHeader() {
   return (
@@ -10,8 +11,10 @@ export function SiteHeader() {
       <div className="site-header-inner">
         <Link href="/" className="site-logo">Wok<span>Post</span></Link>
         <nav style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--text-2)' }}>
-          <Link href="/" style={{ color: 'inherit' }}>Feed</Link>
           <Link href="/ai" style={{ color: 'var(--c-ai)', fontWeight: 600 }}>AI</Link>
+          <Link href="/science" style={{ color: 'inherit' }}>Science</Link>
+          <Link href="/business" style={{ color: 'inherit' }}>Business</Link>
+          <Link href="/bookmarks" style={{ color: 'inherit' }} title="Saved stories">☆</Link>
           <a href="https://wokspec.org" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>WokSpec ↗</a>
         </nav>
       </div>
@@ -35,11 +38,16 @@ export function FeedCard({ item, index }: { item: FeedItem; index: number }) {
   const cat = CATEGORIES[item.category];
   if ((index + 1) % 8 === 0) return <AdSlot variant="native" />;
 
+  const readMin = item.summary ? Math.max(1, Math.round(item.summary.split(' ').length / 60)) : null;
+
   return (
     <a href={item.url} target="_blank" rel="noopener noreferrer" className="card">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span className="card-tag" style={{ color: cat?.color }}>{cat?.label ?? item.category}</span>
-        {item.aiTagged && <span className="ai-badge">AI {item.aiScore}/10</span>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {item.aiTagged && <span className="ai-badge">AI {item.aiScore}/10</span>}
+          <BookmarkButton id={item.id} title={item.title} url={item.url} category={item.category} />
+        </div>
       </div>
       <div className="card-title">{item.title}</div>
       {item.summary && (
@@ -51,6 +59,7 @@ export function FeedCard({ item, index }: { item: FeedItem; index: number }) {
         <span>{item.sourceName}</span>
         <span>·</span>
         <span>{timeAgo(item.publishedAt)}</span>
+        {readMin && <><span>·</span><span>{readMin} min read</span></>}
         {item.score !== undefined && <><span>·</span><span>↑ {item.score}</span></>}
       </div>
     </a>
