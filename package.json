@@ -3,24 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
-    "build:cf": "npx @opennextjs/cloudflare build --openNextConfigPath ./open-next.config.ts && cp .open-next/worker.js .open-next/assets/_worker.js && cp -r .open-next/cloudflare .open-next/assets/ && cp -r .open-next/server-functions .open-next/assets/ && cp -r .open-next/middleware .open-next/assets/ && cp -r .open-next/.build .open-next/assets/ && node -e \"const r={version:1,include:['/*'],exclude:['/_next/static/*','/favicon.ico','/_next/image*']};require('fs').writeFileSync('.open-next/assets/_routes.json',JSON.stringify(r))\"",
-    "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets --project-name wokpost --branch main"
+    "start": "next start",
+    "preview": "opennextjs-cloudflare build && wrangler pages dev",
+    "deploy": "opennextjs-cloudflare build && wrangler pages deploy .open-next/assets --project-name wokpost --branch main",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.16.5",
-    "next": "^15.3.3",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "resend": "^4.6.0"
+    "esbuild": "^0.27.3",
+    "next": "15.3.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "resend": "^6.9.2"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250214.0",
+    "@cloudflare/workers-types": "^4.20260303.0",
+    "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "tailwindcss": "^4.2.0",
     "typescript": "^5",
-    "wrangler": "^4.0.0"
+    "wrangler": "^4.67.0"
   }
 }

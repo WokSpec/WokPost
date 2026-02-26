@@ -3,13 +3,18 @@ import { useState } from 'react';
 
 export function NewsletterFormInline() {
   const [status, setStatus] = useState<'idle' | 'ok' | 'err'>('idle');
+
   return (
     <form
       className="newsletter-inline"
       onSubmit={async (e) => {
         e.preventDefault();
         const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
-        const res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+        const res = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
         setStatus(res.ok ? 'ok' : 'err');
         if (res.ok) (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value = '';
       }}
