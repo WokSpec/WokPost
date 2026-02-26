@@ -3,7 +3,6 @@ import { FEED_SOURCES } from '@/lib/feed/sources';
 import { fetchAllSources } from '@/lib/feed/aggregator';
 import type { Category } from '@/lib/feed/types';
 
-export const runtime = 'edge';
 
 function rateKey(req: Request) {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
