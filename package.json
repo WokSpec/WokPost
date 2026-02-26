@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "next start",
-    "preview": "opennextjs-cloudflare build && wrangler pages dev",
-    "deploy": "opennextjs-cloudflare build && wrangler pages deploy .open-next/assets --project-name wokpost --branch main",
+    "build:cf": "opennextjs-cloudflare build && cp .open-next/worker.js .open-next/assets/_worker.js && cp -r .open-next/cloudflare .open-next/assets/ && cp -r .open-next/server-functions .open-next/assets/ && cp -r .open-next/middleware .open-next/assets/ && cp -r .open-next/.build .open-next/assets/ && node -e \"const r={version:1,include:['/*'],exclude:['/_next/static/*','/favicon.ico','/_next/image*']};require('fs').writeFileSync('.open-next/assets/_routes.json',JSON.stringify(r))\"",
+    "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets --project-name wokpost --branch main",
+    "preview": "npm run build:cf && wrangler pages dev .open-next/assets",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
   },
   "dependencies": {
