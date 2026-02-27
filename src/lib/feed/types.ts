@@ -49,7 +49,8 @@ export interface FeedItem {
   url: string;
   sourceId: string;
   sourceName: string;
-  sourceType: 'rss' | 'reddit' | 'hn';
+  sourceType: 'rss' | 'reddit' | 'hn' | 'github';
+  sourceTier: 1 | 2 | 3; // 1=top-tier journalism/research, 2=quality trade, 3=community
   category: Category;
   aiTagged: boolean;
   aiScore: number; // 1-10
@@ -58,16 +59,17 @@ export interface FeedItem {
   tags: string[];
   thumbnail?: string;
   commentCount?: number;
-  score?: number; // reddit/HN score
+  score?: number; // reddit/HN upvotes or GitHub stars
 }
 
 export interface FeedSource {
   id: string;
   name: string;
   url: string;
-  type: 'rss' | 'reddit' | 'hn';
+  type: 'rss' | 'reddit' | 'hn' | 'pwc' | 'github';
   defaultCategory: Category;
   alwaysAiTagged?: boolean;
+  tier?: 1 | 2 | 3;
 }
 
 export interface FeedPage {

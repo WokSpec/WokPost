@@ -100,6 +100,15 @@ export function FeedCard({ item, index, bookmarked, onBookmark }: {
           </div>
         )}
         <div className="card-meta">
+          {item.sourceType === 'github' && (
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--text-2)', background: 'rgba(255,255,255,0.07)', padding: '1px 5px', borderRadius: 4, marginRight: 2 }}>REPO</span>
+          )}
+          {item.sourceType === 'rss' && item.sourceName.startsWith('arXiv') && (
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--c-ai)', background: 'rgba(56,189,248,0.1)', padding: '1px 5px', borderRadius: 4, marginRight: 2 }}>PAPER</span>
+          )}
+          {item.sourceName === 'Papers with Code' && (
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--c-ai)', background: 'rgba(56,189,248,0.1)', padding: '1px 5px', borderRadius: 4, marginRight: 2 }}>PAPER</span>
+          )}
           {domain && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -111,10 +120,14 @@ export function FeedCard({ item, index, bookmarked, onBookmark }: {
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           )}
-          <span>{item.sourceName}</span>
+          <span style={{ fontWeight: item.sourceTier === 1 ? 600 : undefined }}>
+            {item.sourceTier === 1 && <span style={{ color: '#f59e0b', marginRight: 2 }}>◆</span>}
+            {item.sourceName}
+          </span>
           <span>·</span>
           <span>{timeAgo(item.publishedAt)}</span>
-          {item.score !== undefined && <><span>·</span><span>↑ {item.score}</span></>}
+          {item.score !== undefined && item.sourceType !== 'github' && <><span>·</span><span>↑ {item.score}</span></>}
+          {item.sourceType === 'github' && item.score !== undefined && <><span>·</span><span>⭐ {item.score.toLocaleString()}</span></>}
           {item.commentCount !== undefined && item.commentCount > 0 && (
             <><span>·</span><span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>💬 {item.commentCount}</span></>
           )}
