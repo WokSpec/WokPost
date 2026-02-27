@@ -1,11 +1,37 @@
 import { NextResponse } from 'next/server';
 import { FEED_SOURCES } from '@/lib/feed/sources';
 import { fetchAllSources } from '@/lib/feed/aggregator';
-import type { Category } from '@/lib/feed/types';
+import type { Category, FeedItem } from '@/lib/feed/types';
 
-
-function rateKey(req: Request) {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+// ── Upsert fetched items into D1 for persistent /post/[id] lookup ────────────
+async function persistItems(items: FeedItem[]) {
+  try {
+    // @ts-expect-error — Cloudflare D1 injected at runtime
+    const db = globalThis.__env__?.DB as import('@cloudflare/workers-types').D1Database | undefined;
+    if (!db) return;
+    // Batch in chunks of 50
+    for (let i = 0; i < items.length; i += 50) {
+      const chunk = items.slice(i, i + 50);
+      const stmts = chunk.map(item =>
+        db.prepare(`INSERT OR REPLACE INTO feed_items
+          (id, title, url, source_id, source_name, source_type, source_tier,
+           content_type, category, ai_tagged, ai_score, published_at,
+           summary, tags, thumbnail, score, repo_language, repo_topics, fetched_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))`)
+          .bind(
+            item.id, item.title, item.url, item.sourceId, item.sourceName,
+            item.sourceType, item.sourceTier, item.contentType ?? 'story',
+            item.category, item.aiTagged ? 1 : 0, item.aiScore,
+            item.publishedAt, item.summary ?? '',
+            JSON.stringify(item.tags ?? []),
+            item.thumbnail ?? null, item.score ?? null,
+            item.repoLanguage ?? null,
+            item.repoTopics ? JSON.stringify(item.repoTopics) : null,
+          )
+      );
+      await db.batch(stmts);
+    }
+  } catch { /* D1 unavailable or batch error — non-blocking */ }
 }
 
 export async function GET(req: Request) {
@@ -17,49 +43,57 @@ export async function GET(req: Request) {
   const limit = 20;
 
   // Try KV cache
-  let items;
+  let items: FeedItem[] | undefined;
+  let cacheHit = false;
   try {
     // @ts-expect-error — Cloudflare env injected at runtime
-    const kv = process.env.FEED_CACHE ?? globalThis.__env__?.FEED_CACHE;
+    const kv = globalThis.__env__?.FEED_CACHE;
     const cacheKey = `feed:${category ?? 'all'}`;
     if (kv) {
-      const cached = await kv.get(cacheKey, 'json');
-      if (cached) {
-        items = cached;
-      }
+      const cached = await kv.get(cacheKey, 'json') as FeedItem[] | null;
+      if (cached) { items = cached; cacheHit = true; }
     }
   } catch { /* no KV in local dev */ }
 
   if (!items) {
-    const sources = category ? FEED_SOURCES.filter(s => s.defaultCategory === category) : FEED_SOURCES;
+    const sources = category
+      ? FEED_SOURCES.filter(s => s.defaultCategory === category)
+      : FEED_SOURCES;
     items = await fetchAllSources(sources);
 
-    // Store in KV for 30 min
+    // Write to KV (30 min)
     try {
       // @ts-expect-error
-      const kv = process.env.FEED_CACHE ?? globalThis.__env__?.FEED_CACHE;
+      const kv = globalThis.__env__?.FEED_CACHE;
       if (kv) await kv.put(`feed:${category ?? 'all'}`, JSON.stringify(items), { expirationTtl: 1800 });
     } catch { /* no KV in local dev */ }
   }
 
+  // Persist fresh items to D1 for permanent /post/[id] lookups (only on cache miss)
+  if (!cacheHit && items.length > 0) {
+    persistItems(items); // fire-and-forget
+  }
+
+  let filtered = items as FeedItem[];
+
   // Filter
-  if (category) items = items.filter((i: { category: Category }) => i.category === category);
-  if (q) items = items.filter((i: { title: string; summary: string }) =>
-    i.title.toLowerCase().includes(q) || i.summary.toLowerCase().includes(q)
+  if (category) filtered = filtered.filter(i => i.category === category);
+  if (q) filtered = filtered.filter(i =>
+    i.title.toLowerCase().includes(q) || (i.summary ?? '').toLowerCase().includes(q)
   );
 
   // Sort
   if (sort === 'trending') {
-    items = [...items].sort((a: { score?: number; commentCount?: number }, b: { score?: number; commentCount?: number }) =>
+    filtered = [...filtered].sort((a, b) =>
       ((b.score ?? 0) + (b.commentCount ?? 0)) - ((a.score ?? 0) + (a.commentCount ?? 0))
     );
   } else if (sort === 'impact') {
-    items = [...items].sort((a: { aiScore: number }, b: { aiScore: number }) => b.aiScore - a.aiScore);
+    filtered = [...filtered].sort((a, b) => b.aiScore - a.aiScore);
   }
 
-  const total = items.length;
+  const total = filtered.length;
   const start = (page - 1) * limit;
-  const paged = items.slice(start, start + limit);
+  const paged = filtered.slice(start, start + limit);
 
   return NextResponse.json({ items: paged, total, page, hasMore: start + limit < total });
 }

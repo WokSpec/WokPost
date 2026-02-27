@@ -1,15 +1,73 @@
 import { FEED_SOURCES } from '@/lib/feed/sources';
 import { fetchAllSources } from '@/lib/feed/aggregator';
 import { CATEGORIES } from '@/lib/feed/types';
+import type { FeedItem, ContentType, Category } from '@/lib/feed/types';
 import { CommentsSection } from '@/components/CommentsSection';
 import { NewsletterBar } from '@/components/FeedComponents';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
-export const revalidate = 1800;
+// Dynamic — item lookup depends on D1/KV at request time
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 function readingTime(text: string): number {
   return Math.max(1, Math.ceil(text.split(/\s+/).length / 200));
+}
+
+// ── D1 row → FeedItem ────────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToItem(row: Record<string, any>): FeedItem {
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    url: row.url as string,
+    sourceId: row.source_id as string,
+    sourceName: row.source_name as string,
+    sourceType: row.source_type as 'rss' | 'reddit' | 'hn' | 'github',
+    sourceTier: (row.source_tier as 1 | 2 | 3) ?? 3,
+    contentType: (row.content_type as ContentType) ?? 'story',
+    category: row.category as Category,
+    aiTagged: !!(row.ai_tagged as number),
+    aiScore: (row.ai_score as number) ?? 1,
+    publishedAt: row.published_at as string,
+    summary: row.summary as string ?? '',
+    tags: row.tags ? (JSON.parse(row.tags as string) as string[]) : [],
+    thumbnail: row.thumbnail as string | undefined,
+    score: row.score as number | undefined,
+    repoLanguage: row.repo_language as string | undefined,
+    repoTopics: row.repo_topics ? (JSON.parse(row.repo_topics as string) as string[]) : undefined,
+  };
+}
+
+// ── Resolve an item by ID — D1 → KV → full fetch ────────────────────────────
+async function resolveItem(decoded: string): Promise<FeedItem | undefined> {
+  // 1. Try D1 (persistent, always works for items seen before)
+  try {
+    // @ts-expect-error — Cloudflare D1 binding
+    const db = globalThis.__env__?.DB as import('@cloudflare/workers-types').D1Database | undefined;
+    if (db) {
+      const row = await db.prepare('SELECT * FROM feed_items WHERE id = ?').bind(decoded).first();
+      if (row) return rowToItem(row as Record<string, unknown>);
+    }
+  } catch { /* D1 unavailable */ }
+
+  // 2. Try KV full feed cache
+  try {
+    // @ts-expect-error — Cloudflare KV binding
+    const kv = globalThis.__env__?.FEED_CACHE;
+    if (kv) {
+      const cached = await kv.get('feed:all', 'json') as FeedItem[] | null;
+      if (cached) {
+        const found = cached.find(i => i.id === decoded);
+        if (found) return found;
+      }
+    }
+  } catch { /* KV unavailable */ }
+
+  // 3. Full source fetch as last resort
+  const items = await fetchAllSources(FEED_SOURCES).catch(() => [] as FeedItem[]);
+  return items.find(i => i.id === decoded);
 }
 
 // ── Favicon helper ──────────────────────────────────────────────────────────
@@ -22,14 +80,13 @@ function Favicon({ url, size = 14 }: { url: string; size?: number }) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const items = await fetchAllSources(FEED_SOURCES.slice(0, 40)).catch(() => []);
-  const item = items.find(i => i.id === decodeURIComponent(id));
-  if (!item) return { title: 'Story Not Found' };
+  const item = await resolveItem(decodeURIComponent(id));
+  if (!item) return { title: 'Story Not Found — WokPost' };
   const description = item.contentType === 'repo'
     ? (item.summary || `Open source repository: ${item.title}`)
     : item.summary?.slice(0, 160) || undefined;
   return {
-    title: item.title,
+    title: `${item.title} — WokPost`,
     description,
     openGraph: item.thumbnail ? { images: [{ url: item.thumbnail }] } : undefined,
   };
@@ -38,12 +95,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const decoded = decodeURIComponent(id);
-
-  const items = await fetchAllSources(FEED_SOURCES.slice(0, 40)).catch(() => []);
-  const item = items.find(
-    i => i.id === decoded || Buffer.from(i.id).toString('base64url').startsWith(decoded.slice(0, 8))
-  );
-
+  const item = await resolveItem(decoded);
   if (!item) notFound();
 
   const cat = CATEGORIES[item.category];

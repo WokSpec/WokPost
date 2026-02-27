@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CATEGORIES } from '@/lib/feed/types';
 import type { FeedItem } from '@/lib/feed/types';
@@ -112,6 +113,7 @@ export function FeedCard({
   onBookmark?: (id: string) => void;
 }) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [imgFailed, setImgFailed] = useState(false);
   const [bookmarked, setBookmarked] = useState(!!initialBookmarked);
   const [saving, setSaving] = useState(false);
@@ -128,6 +130,11 @@ export function FeedCard({
   const internalHref = `/post/${encodeURIComponent(item.id)}`;
   const readingTime = isRepo ? null : Math.max(1, Math.ceil((item.summary?.length ?? 0) / 200 + item.title.length / 100));
   const catColor = cat?.color ?? 'var(--accent)';
+
+  // Whole-card click: navigate to post page
+  const handleCardClick = useCallback(() => {
+    router.push(internalHref);
+  }, [router, internalHref]);
 
   const handleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -172,10 +179,12 @@ export function FeedCard({
   return (
     <div
       className={`card${showImage ? ' card-with-image' : ''}`}
-      style={{ '--card-color': catColor } as React.CSSProperties}
+      style={{ '--card-color': catColor, cursor: 'pointer' } as React.CSSProperties}
+      onClick={handleCardClick}
+      role="article"
     >
       {showImage && (
-        <Link href={internalHref} className="card-image-link" tabIndex={-1}>
+        <Link href={internalHref} className="card-image-link" tabIndex={-1} onClick={e => e.stopPropagation()}>
           <div className="card-image-wrap">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -222,7 +231,7 @@ export function FeedCard({
           </div>
         </div>
 
-        <Link href={internalHref} style={{ display: 'block' }}>
+        <Link href={internalHref} style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
           <div className="card-title">{item.title}</div>
         </Link>
 
