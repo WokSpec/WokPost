@@ -46,8 +46,6 @@ async function fetchQuotes(): Promise<StockQuote[]> {
   }));
 }
 
-export const runtime = 'edge';
-
 export async function GET() {
   const kv = getKV();
   const cacheKey = 'stocks:quotes:v1';
