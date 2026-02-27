@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import type { FeedItem } from '@/lib/feed/types';
 import { FeedCard } from './FeedComponents';
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Props) {
+  const { data: session } = useSession();
   const [allItems, setAllItems] = useState<FeedItem[]>(initialItems);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'latest' | 'trending' | 'impact'>('latest');
@@ -18,26 +20,54 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
   const [hasMore, setHasMore] = useState(initialTotal > initialItems.length || initialItems.length >= 20);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // Bookmarks: Set of item IDs that are bookmarked
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [showBookmarks, setShowBookmarks] = useState(false);
+  // Save-feed modal
+  const [showSaveFeed, setShowSaveFeed] = useState(false);
+  const [saveFeedName, setSaveFeedName] = useState('');
+  const [saveFeedLoading, setSaveFeedLoading] = useState(false);
+  const [saveFeedMsg, setSaveFeedMsg] = useState('');
+  const saveFeedRef = useRef<HTMLDivElement>(null);
 
+  // Load bookmarks: cloud if logged in, localStorage otherwise
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('wokpost-bookmarks');
-      if (saved) setBookmarks(new Set(JSON.parse(saved) as string[]));
-    } catch { /* localStorage unavailable */ }
-  }, []);
+    if (session?.user?.id) {
+      fetch('/api/bookmarks')
+        .then(r => r.json())
+        .then((data: unknown) => {
+          const d = data as { bookmarks?: { item_id: string }[] };
+          if (d.bookmarks) {
+            setBookmarks(new Set(d.bookmarks.map(b => b.item_id)));
+          }
+        })
+        .catch(() => {});
+    } else {
+      try {
+        const saved = localStorage.getItem('wokpost-bookmarks');
+        if (saved) setBookmarks(new Set(JSON.parse(saved) as string[]));
+      } catch { /* localStorage unavailable */ }
+    }
+  }, [session?.user?.id]);
 
+  // Keep localStorage in sync for logged-out users
   const toggleBookmark = useCallback((id: string) => {
+    if (!session) {
+      setBookmarks(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        try { localStorage.setItem('wokpost-bookmarks', JSON.stringify([...next])); } catch { /* ignore */ }
+        return next;
+      });
+    }
+    // Logged-in: FeedCard handles the API call directly; just sync local state
     setBookmarks(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
-      try { localStorage.setItem('wokpost-bookmarks', JSON.stringify([...next])); } catch { /* ignore */ }
       return next;
     });
-  }, []);
+  }, [session]);
 
-  // Client-side filtered/sorted view
   const displayItems = (() => {
     let result = allItems;
     if (showBookmarks) result = result.filter(i => bookmarks.has(i.id));
@@ -73,7 +103,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
       });
       setHasMore(data.hasMore);
       setPage(nextPage);
-    } catch { /* network error — ignore */ }
+    } catch { /* ignore */ }
     setLoading(false);
   };
 
@@ -88,6 +118,36 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
       setHasMore(data.hasMore);
     } catch { /* ignore */ }
     setRefreshing(false);
+  };
+
+  const saveFeed = async () => {
+    if (!session) {
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+    if (!saveFeedName.trim()) { setSaveFeedMsg('Enter a name.'); return; }
+    setSaveFeedLoading(true);
+    setSaveFeedMsg('');
+    try {
+      const res = await fetch('/api/saved-feeds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: saveFeedName.trim(),
+          category: category ?? null,
+          keywords: search || null,
+          sort,
+        }),
+      });
+      if (res.ok) {
+        setSaveFeedMsg('✓ Feed saved!');
+        setSaveFeedName('');
+        setTimeout(() => { setShowSaveFeed(false); setSaveFeedMsg(''); }, 1200);
+      } else {
+        setSaveFeedMsg('Failed to save. Try again.');
+      }
+    } catch { setSaveFeedMsg('Network error.'); }
+    setSaveFeedLoading(false);
   };
 
   return (
@@ -120,9 +180,71 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
           <button
             className={`sort-tab${showBookmarks ? ' active' : ''}`}
             onClick={() => setShowBookmarks(b => !b)}
+            title="View saved bookmarks"
           >
             🔖 Saved{bookmarks.size > 0 ? ` (${bookmarks.size})` : ''}
           </button>
+          {/* Save current feed as a named preset */}
+          <div style={{ position: 'relative' }} ref={saveFeedRef}>
+            <button
+              className="sort-tab"
+              onClick={() => setShowSaveFeed(s => !s)}
+              title="Save this feed filter"
+            >
+              📌 Save Feed
+            </button>
+            {showSaveFeed && (
+              <>
+                <div onClick={() => setShowSaveFeed(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50,
+                  background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10,
+                  padding: 16, minWidth: 240, boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Save current feed</div>
+                  {!session && (
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 8 }}>
+                      Sign in to save feeds across devices.
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>
+                    {category ? `Category: ${category}` : 'All categories'}
+                    {search ? ` · "${search}"` : ''}
+                    {` · ${sort}`}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Name this feed…"
+                    value={saveFeedName}
+                    onChange={e => setSaveFeedName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && saveFeed()}
+                    style={{
+                      width: '100%', background: 'var(--bg)', border: '1px solid var(--border)',
+                      borderRadius: 6, padding: '8px 10px', fontSize: 13, color: 'var(--text)',
+                      boxSizing: 'border-box', marginBottom: 8,
+                    }}
+                    autoFocus
+                  />
+                  {saveFeedMsg && (
+                    <div style={{ fontSize: 12, color: saveFeedMsg.startsWith('✓') ? '#4ade80' : '#f87171', marginBottom: 8 }}>
+                      {saveFeedMsg}
+                    </div>
+                  )}
+                  <button
+                    onClick={saveFeed}
+                    disabled={saveFeedLoading}
+                    style={{
+                      width: '100%', background: 'var(--accent)', color: '#000',
+                      border: 'none', borderRadius: 6, padding: '9px 0',
+                      fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    }}
+                  >
+                    {saveFeedLoading ? 'Saving…' : session ? 'Save' : 'Sign in to save'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <button className="refresh-btn" onClick={refresh} disabled={refreshing} title="Refresh feed">
           <span className={refreshing ? 'spin' : ''}>↻</span>
@@ -162,7 +284,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
           {search
             ? <>No stories matching <strong>&ldquo;{search}&rdquo;</strong> — <button className="link-btn" onClick={() => setSearch('')}>clear search</button></>
             : showBookmarks
-            ? <>No saved stories yet. Click 🏷️ on any card to save it for later.</>
+            ? <>No saved stories yet. Click 🏷️ on any card to save it.</>
             : <>No stories found. <button className="link-btn" onClick={refresh}>Refresh</button></>
           }
         </div>

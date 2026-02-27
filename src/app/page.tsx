@@ -3,7 +3,6 @@ import { fetchAllSources } from '@/lib/feed/aggregator';
 import { CATEGORIES } from '@/lib/feed/types';
 import { CategoryStrip, NewsletterBar } from '@/components/FeedComponents';
 import { InteractiveFeed } from '@/components/InteractiveFeed';
-import { AdSlot } from '@/components/AdSlot';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -149,7 +148,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <AdSlot variant="rectangle" />
+
           </aside>
         </div>
       </div>

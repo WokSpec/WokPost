@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { CATEGORIES } from '@/lib/feed/types';
 import type { FeedItem } from '@/lib/feed/types';
-import { AdSlot } from './AdSlot';
 import { NewsletterFormInline } from './NewsletterForm';
+import { AuthButton } from './AuthButton';
 
 export function SiteHeader() {
   return (
@@ -14,10 +15,11 @@ export function SiteHeader() {
         <Link href="/" className="site-logo">
           Wok<span>Post</span>
         </Link>
-        <nav style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--text-2)' }}>
+        <nav style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--text-2)', alignItems: 'center' }}>
           <Link href="/" style={{ color: 'inherit' }}>Feed</Link>
           <Link href="/ai" style={{ color: 'var(--c-ai)', fontWeight: 600 }}>AI</Link>
           <a href="https://wokspec.org" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>WokSpec</a>
+          <AuthButton />
         </nav>
       </div>
     </header>
@@ -41,22 +43,66 @@ export function CategoryStrip({ active }: { active?: string }) {
   );
 }
 
-export function FeedCard({ item, index, bookmarked, onBookmark }: {
+export function FeedCard({ item, index, bookmarked: initialBookmarked, onBookmark }: {
   item: FeedItem;
   index: number;
   bookmarked?: boolean;
   onBookmark?: (id: string) => void;
 }) {
+  const { data: session } = useSession();
   const [imgFailed, setImgFailed] = useState(false);
+  const [bookmarked, setBookmarked] = useState(!!initialBookmarked);
+  const [saving, setSaving] = useState(false);
+
   const cat = CATEGORIES[item.category];
-  const isNativeAdSlot = (index + 1) % 8 === 0;
-
-  if (isNativeAdSlot) {
-    return <AdSlot variant="native" />;
-  }
-
   const showImage = !!(item.thumbnail && !imgFailed);
   const domain = (() => { try { return new URL(item.url).hostname.replace(/^www\./, ''); } catch { return ''; } })();
+
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!session) {
+      // Redirect to login, then back
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+
+    if (saving) return;
+    setSaving(true);
+
+    if (bookmarked) {
+      // Remove
+      const res = await fetch(`/api/bookmarks?item_id=${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        setBookmarked(false);
+        onBookmark?.(item.id);
+      }
+    } else {
+      // Add
+      const res = await fetch('/api/bookmarks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item_id: item.id,
+          item_title: item.title,
+          item_url: item.url,
+          item_category: item.category,
+          item_source: item.sourceName,
+          item_source_tier: item.sourceTier,
+          item_thumbnail: item.thumbnail,
+          item_ai_score: item.aiScore,
+          item_ai_tagged: item.aiTagged,
+        }),
+      });
+      if (res.ok) {
+        setBookmarked(true);
+        onBookmark?.(item.id);
+      }
+    }
+
+    setSaving(false);
+  };
 
   return (
     <div className={`card${showImage ? ' card-with-image' : ''}`}>
@@ -79,26 +125,28 @@ export function FeedCard({ item, index, bookmarked, onBookmark }: {
           <span className="card-tag" style={{ color: cat?.color }}>{cat?.label ?? item.category}</span>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             {item.aiTagged && <span className="ai-badge">AI {item.aiScore}/10</span>}
-            {onBookmark && (
-              <button
-                className={`bookmark-btn${bookmarked ? ' active' : ''}`}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onBookmark(item.id); }}
-                title={bookmarked ? 'Remove bookmark' : 'Save for later'}
-                aria-label={bookmarked ? 'Remove bookmark' : 'Save for later'}
-              >
-                {bookmarked ? '🔖' : '🏷️'}
-              </button>
-            )}
+            <button
+              className={`bookmark-btn${bookmarked ? ' active' : ''}`}
+              onClick={handleBookmark}
+              title={session ? (bookmarked ? 'Remove bookmark' : 'Save story') : 'Sign in to save'}
+              aria-label={bookmarked ? 'Remove bookmark' : 'Save story'}
+              style={{ opacity: saving ? 0.5 : 1 }}
+            >
+              {bookmarked ? '🔖' : '🏷️'}
+            </button>
           </div>
         </div>
+
         <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
           <div className="card-title">{item.title}</div>
         </a>
+
         {item.summary && !showImage && (
           <div className="card-summary">
             {item.summary.slice(0, 120)}{item.summary.length > 120 ? '…' : ''}
           </div>
         )}
+
         <div className="card-meta">
           {item.sourceType === 'github' && (
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--text-2)', background: 'rgba(255,255,255,0.07)', padding: '1px 5px', borderRadius: 4, marginRight: 2 }}>REPO</span>
@@ -151,8 +199,6 @@ export function NewsletterBar() {
   );
 }
 
-// NewsletterForm removed — see NewsletterForm.tsx (client component)
-
 export function SiteFooter() {
   return (
     <footer className="site-footer">
@@ -160,6 +206,7 @@ export function SiteFooter() {
         <span>© {new Date().getFullYear()} WokPost · <a href="https://wokspec.org" style={{ color: 'inherit' }}>Wok Specialists</a></span>
         <div style={{ display: 'flex', gap: 16 }}>
           <a href="https://github.com/WokSpec" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <Link href="/profile" style={{ color: 'inherit' }}>My Feed</Link>
           <a href="/api/rss/ai">RSS (AI)</a>
         </div>
       </div>
