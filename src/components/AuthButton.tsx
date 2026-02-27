@@ -1,100 +1,59 @@
 'use client';
 
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export function AuthButton() {
   const { data: session, status } = useSession();
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  if (status === 'loading') {
-    return <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-3)' }} />;
-  }
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  if (status === 'loading') return <span style={{ width: 28, height: 28, display: 'inline-block' }} />;
 
   if (!session) {
     return (
-      <button
-        onClick={() => signIn(undefined, { callbackUrl: '/' })}
-        style={{
-          background: 'var(--accent)',
-          color: '#000',
-          border: 'none',
-          borderRadius: 6,
-          padding: '7px 14px',
-          fontSize: 13,
-          fontWeight: 700,
-          cursor: 'pointer',
-          letterSpacing: '-0.01em',
-        }}
-      >
+      <Link href="/login" className="nav-link" style={{ border: '1px solid var(--border-2)', padding: '4px 10px', borderRadius: 2, fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
         Sign in
-      </button>
+      </Link>
     );
   }
 
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}
-        aria-label="User menu"
-      >
-        {session.user?.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={session.user.image}
-            alt=""
-            width={30}
-            height={30}
-            style={{ borderRadius: '50%', border: '2px solid var(--border)' }}
-          />
-        ) : (
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#000' }}>
-            {session.user?.name?.[0]?.toUpperCase() ?? '?'}
-          </div>
-        )}
-        <span style={{ fontSize: 12, color: 'var(--text-2)', display: 'none' }} className="auth-name">
-          {session.user?.name?.split(' ')[0]}
-        </span>
-      </button>
+  const initials = session.user?.name
+    ? session.user.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+    : session.user?.email?.[0]?.toUpperCase() ?? 'U';
 
+  return (
+    <div className="user-menu" ref={ref}>
+      <button className="user-avatar" onClick={() => setOpen(v => !v)} aria-label="Account menu" aria-expanded={open}>
+        {session.user?.image
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={session.user.image} alt="" width={28} height={28} style={{ display: 'block' }} />
+          : initials}
+      </button>
       {open && (
-        <>
-          {/* Backdrop */}
-          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />
-          {/* Dropdown */}
-          <div style={{
-            position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50,
-            background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10,
-            minWidth: 200, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{session.user?.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{session.user?.email}</div>
+        <div className="dropdown fade-in">
+          <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', lineHeight: 1.3 }}>
+              {session.user?.name ?? 'User'}
             </div>
-            <Link
-              href="/profile"
-              onClick={() => setOpen(false)}
-              style={{ display: 'block', padding: '11px 16px', fontSize: 13, color: 'var(--text)', textDecoration: 'none' }}
-            >
-              🔖 My Bookmarks
-            </Link>
-            <Link
-              href="/profile"
-              onClick={() => setOpen(false)}
-              style={{ display: 'block', padding: '11px 16px', fontSize: 13, color: 'var(--text)', textDecoration: 'none', borderTop: '1px solid var(--border)' }}
-            >
-              📌 My Feeds
-            </Link>
-            <button
-              onClick={() => { setOpen(false); signOut({ callbackUrl: '/' }); }}
-              style={{ width: '100%', textAlign: 'left', padding: '11px 16px', fontSize: 13, color: 'var(--text-3)', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer' }}
-            >
-              Sign out
-            </button>
+            <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2, letterSpacing: '0.02em' }}>
+              {session.user?.email}
+            </div>
           </div>
-        </>
+          <Link href="/profile" className="dropdown-item" onClick={() => setOpen(false)}>Profile &amp; Feeds</Link>
+          <Link href="/profile#bookmarks" className="dropdown-item" onClick={() => setOpen(false)}>Bookmarks</Link>
+          <Link href="/newsletter" className="dropdown-item" onClick={() => setOpen(false)}>Newsletter Prefs</Link>
+          <button className="dropdown-item danger" onClick={() => signOut({ callbackUrl: '/' })}>Sign out</button>
+        </div>
       )}
     </div>
   );

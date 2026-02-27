@@ -6,13 +6,14 @@ import { auth } from '@/auth';
 
 export const metadata: Metadata = {
   title: { default: 'WokPost', template: '%s — WokPost' },
-  description: 'AI in everything. News across 20 categories, powered by WokSpec.',
+  description: 'Open source, unbiased news across 20 categories. No algorithms. No sponsored content.',
+  metadataBase: new URL('https://wokpost.wokspec.org'),
   openGraph: {
     type: 'website',
     siteName: 'WokPost',
     url: 'https://wokpost.wokspec.org',
-    title: 'WokPost',
-    description: 'AI in everything. News across 20 categories.',
+    title: 'WokPost — Open Source Unbiased News',
+    description: 'Verified, unbiased news across 20 categories.',
     images: [{ url: '/og.png' }],
   },
   twitter: { card: 'summary_large_image', site: '@wokspec' },
