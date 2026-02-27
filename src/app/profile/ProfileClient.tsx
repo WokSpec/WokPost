@@ -39,20 +39,23 @@ export default function ProfileClient({
 
   return (
     <>
-      {/* ── Saved Feeds ── */}
-      <section style={{ marginBottom: 52 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>My Feeds</h2>
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{savedFeeds.length} saved</span>
+      {/* Saved Feeds */}
+      <section style={{ marginBottom: '3rem' }} id="saved-feeds">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '0.625rem', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.01em', margin: 0 }}>
+            My Feeds
+          </h2>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
+            {savedFeeds.length} saved
+          </span>
         </div>
 
         {savedFeeds.length === 0 ? (
-          <div style={{ padding: '28px 20px', background: 'var(--bg-2)', borderRadius: 10, border: '1px solid var(--border)', fontSize: 14, color: 'var(--text-3)', textAlign: 'center', lineHeight: 1.7 }}>
-            No saved feeds yet.<br />
-            Use the <strong style={{ color: 'var(--text-2)' }}>Save Feed</strong> button while browsing to capture your current filters.
+          <div className="feed-empty" style={{ textAlign: 'left' }}>
+            No saved feeds yet. Use the <strong style={{ color: 'var(--text-muted)' }}>Save Feed</strong> button while browsing to capture your current filters.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
             {savedFeeds.map(feed => {
               const cat = feed.category ? categories[feed.category] : null;
               const params = new URLSearchParams();
@@ -62,23 +65,31 @@ export default function ProfileClient({
                 ? `/${feed.category}${params.size ? `?${params}` : ''}`
                 : `/${params.size ? `?${params}` : ''}`;
               return (
-                <div key={feed.id} style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{feed.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div key={feed.id} className="profile-card">
+                  <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '0.875rem', color: 'var(--text)' }}>
+                    {feed.name}
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-faint)', display: 'flex', gap: 6, flexWrap: 'wrap', fontFamily: 'var(--font-mono)' }}>
                     {cat && <span style={{ color: cat.color }}>{cat.label}</span>}
-                    {feed.keywords && <span>"{feed.keywords}"</span>}
+                    {feed.keywords && <span>&ldquo;{feed.keywords}&rdquo;</span>}
                     <span>· {feed.sort}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                    <Link href={href} style={{ flex: 1, textAlign: 'center', background: 'var(--accent)', color: '#000', fontSize: 12, fontWeight: 700, padding: '7px 0', borderRadius: 6, textDecoration: 'none' }}>
-                      Open →
+                    <Link
+                      href={href}
+                      style={{ flex: 1, textAlign: 'center', background: 'var(--accent)', color: '#020c14', fontSize: '0.72rem', fontWeight: 700, padding: '7px 0', borderRadius: 'var(--radius-sm)', textDecoration: 'none', fontFamily: 'var(--font-heading)' }}
+                    >
+                      Open
                     </Link>
                     <button
                       onClick={() => removeFeed(feed.id)}
-                      style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-3)', fontSize: 13, padding: '7px 12px', borderRadius: 6, cursor: 'pointer' }}
+                      style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-faint)', fontSize: '0.72rem', padding: '7px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
                       title="Delete feed"
+                      aria-label="Delete feed"
                     >
-                      ×
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -88,42 +99,61 @@ export default function ProfileClient({
         )}
       </section>
 
-      {/* ── Bookmarks ── */}
-      <section>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Bookmarks</h2>
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{bookmarks.length} saved</span>
+      {/* Bookmarks */}
+      <section id="bookmarks">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '0.625rem', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.01em', margin: 0 }}>
+            Bookmarks
+          </h2>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
+            {bookmarks.length} saved
+          </span>
         </div>
 
         {bookmarks.length === 0 ? (
-          <div style={{ padding: '28px 20px', background: 'var(--bg-2)', borderRadius: 10, border: '1px solid var(--border)', fontSize: 14, color: 'var(--text-3)', textAlign: 'center', lineHeight: 1.7 }}>
-            No bookmarks yet.<br />
-            Hit <strong style={{ color: 'var(--text-2)' }}>🔖</strong> on any story to save it here.
+          <div className="feed-empty" style={{ textAlign: 'left' }}>
+            No bookmarks yet. Tap the bookmark icon on any story to save it here.
           </div>
         ) : (
           <div>
             {bookmarks.map(bm => {
               const cat = bm.item_category ? categories[bm.item_category] : null;
               return (
-                <div key={bm.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
+                <div
+                  key={bm.id}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '1rem 0', borderBottom: '1px solid var(--border)' }}
+                >
                   {bm.item_thumbnail && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={bm.item_thumbnail} alt="" width={80} height={54} style={{ objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+                    <img
+                      src={bm.item_thumbnail}
+                      alt=""
+                      width={80}
+                      height={54}
+                      style={{ objectFit: 'cover', borderRadius: 'var(--radius-sm)', flexShrink: 0 }}
+                    />
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' }}>
-                      {cat && <span style={{ fontSize: 11, fontWeight: 700, color: cat.color }}>{cat.label}</span>}
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' }}>
+                      {cat && (
+                        <span style={{ fontSize: '0.62rem', fontWeight: 700, color: cat.color, fontFamily: 'var(--font-mono)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+                          {cat.label}
+                        </span>
+                      )}
                       {bm.item_ai_tagged === 1 && (
-                        <span className="ai-badge" style={{ fontSize: 10 }}>AI {bm.item_ai_score}/10</span>
+                        <span className="ai-badge">AI {bm.item_ai_score}/10</span>
                       )}
-                      {bm.item_source_tier === 1 && (
-                        <span style={{ color: '#f59e0b', fontSize: 11 }}>◆</span>
-                      )}
+                      {bm.item_source_tier === 1 && <span className="tier1-badge">T1</span>}
                     </div>
-                    <a href={bm.item_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', lineHeight: 1.45, display: 'block' }}>
+                    <a
+                      href={bm.item_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontFamily: 'var(--font-heading)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', lineHeight: 1.45, display: 'block', transition: 'color 0.15s' }}
+                    >
                       {bm.item_title}
                     </a>
-                    <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, display: 'flex', gap: 8 }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-faint)', marginTop: 4, display: 'flex', gap: 8, fontFamily: 'var(--font-mono)' }}>
                       {bm.item_source && <span>{bm.item_source}</span>}
                       <span>·</span>
                       <span>{new Date(bm.bookmarked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -131,10 +161,13 @@ export default function ProfileClient({
                   </div>
                   <button
                     onClick={() => removeBookmark(bm.item_id)}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', fontSize: 18, padding: '4px 6px', flexShrink: 0, lineHeight: 1 }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', padding: '4px', flexShrink: 0, display: 'flex', alignItems: 'center', lineHeight: 1 }}
                     title="Remove bookmark"
+                    aria-label="Remove bookmark"
                   >
-                    ×
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
                   </button>
                 </div>
               );

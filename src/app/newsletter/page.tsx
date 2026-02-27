@@ -51,23 +51,23 @@ export default function NewsletterPage() {
   };
 
   return (
-    <div style={{ minHeight: '80vh', padding: '60px 24px' }}>
-      <div style={{ maxWidth: 620, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 40 }}>
+    <div style={{ minHeight: '80vh', padding: '4rem 1.5rem' }}>
+      <div style={{ maxWidth: 620, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-3)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+        <div>
+          <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', color: 'var(--text-faint)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', marginBottom: 10 }}>
             WokPost Digest
           </div>
-          <h1 style={{ fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 10 }}>
             Your news. Your terms.
           </h1>
-          <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.7, maxWidth: 480 }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.7, maxWidth: 480 }}>
             Two summaries per month. Curated from verified, unbiased sources across the topics you choose. No algorithm. No filler.
           </p>
         </div>
 
-        {/* Progress */}
+        {/* Progress dots */}
         {step < 4 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="nl-progress">
@@ -75,7 +75,7 @@ export default function NewsletterPage() {
                 <span key={s} className={`nl-progress-dot${step >= s ? ' active' : ''}`} />
               ))}
             </div>
-            <span style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
               Step {step} of 3
             </span>
           </div>
@@ -85,8 +85,8 @@ export default function NewsletterPage() {
         {step === 1 && (
           <div className="nl-step fade-in">
             <div>
-              <div className="nl-step-header" style={{ marginBottom: 12 }}>Choose your topics</div>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 20 }}>
+              <div className="nl-step-header" style={{ marginBottom: 8 }}>Choose your topics</div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
                 Select the categories that matter to you. We will only send articles from these areas.
               </p>
               <div className="nl-topics-grid">
@@ -96,10 +96,11 @@ export default function NewsletterPage() {
                     className={`nl-topic-btn${topics.has(id) ? ' selected' : ''}`}
                     style={{ color: cat.color }}
                     onClick={() => toggleTopic(id)}
+                    type="button"
                   >
                     <span className="nl-check">
                       {topics.has(id) && (
-                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round">
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" aria-hidden="true">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       )}
@@ -110,14 +111,10 @@ export default function NewsletterPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-faint)' }}>
                 {topics.size === 0 ? 'Select at least one topic' : `${topics.size} topic${topics.size !== 1 ? 's' : ''} selected`}
               </span>
-              <button
-                className="btn btn-primary"
-                onClick={() => setStep(2)}
-                disabled={topics.size === 0}
-              >
+              <button className="btn btn-primary" onClick={() => setStep(2)} disabled={topics.size === 0} type="button">
                 Continue
               </button>
             </div>
@@ -128,8 +125,8 @@ export default function NewsletterPage() {
         {step === 2 && (
           <div className="nl-step fade-in">
             <div>
-              <div className="nl-step-header" style={{ marginBottom: 12 }}>Anything else?</div>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 20 }}>
+              <div className="nl-step-header" style={{ marginBottom: 8 }}>Anything else?</div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
                 Optional additions to your digest. Toggle any that interest you.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -137,27 +134,28 @@ export default function NewsletterPage() {
                   <button
                     key={ex.id}
                     className={`nl-topic-btn${extras.has(ex.id) ? ' selected' : ''}`}
-                    style={{ color: 'var(--text-2)', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}
+                    style={{ color: 'var(--text-muted)', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}
                     onClick={() => toggleExtra(ex.id)}
+                    type="button"
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className="nl-check" style={{ flexShrink: 0 }}>
+                      <span className="nl-check">
                         {extras.has(ex.id) && (
-                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="3.5" strokeLinecap="round">
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" strokeWidth="3.5" strokeLinecap="round" aria-hidden="true">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                         )}
                       </span>
-                      <span className="nl-topic-label" style={{ fontSize: 13 }}>{ex.label}</span>
+                      <span className="nl-topic-label" style={{ fontSize: '0.82rem' }}>{ex.label}</span>
                     </div>
-                    <span style={{ fontSize: 11, color: 'var(--text-3)', paddingLeft: 22 }}>{ex.desc}</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)', paddingLeft: 22 }}>{ex.desc}</span>
                   </button>
                 ))}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
-              <button className="btn btn-ghost" onClick={() => setStep(1)}>Back</button>
-              <button className="btn btn-primary" onClick={() => setStep(3)}>Continue</button>
+              <button className="btn btn-ghost" onClick={() => setStep(1)} type="button">Back</button>
+              <button className="btn btn-primary" onClick={() => setStep(3)} type="button">Continue</button>
             </div>
           </div>
         )}
@@ -165,9 +163,9 @@ export default function NewsletterPage() {
         {/* Step 3: Email */}
         {step === 3 && (
           <div className="nl-step fade-in">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="nl-step-header">Enter your email</div>
-              <p style={{ fontSize: 13, color: 'var(--text-2)' }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                 Two digests per month. No spam. Unsubscribe from any email.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -184,21 +182,22 @@ export default function NewsletterPage() {
                   autoFocus
                 />
               </div>
-              {error && <p style={{ fontSize: 12, color: 'var(--red)' }}>{error}</p>}
+              {error && <p style={{ fontSize: '0.75rem', color: 'var(--red)' }}>{error}</p>}
               <div style={{ padding: '12px 0', borderTop: '1px solid var(--border)', marginTop: 4 }}>
-                <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.6 }}>
-                  Your selection: <strong style={{ color: 'var(--text-2)' }}>{topics.size} topic{topics.size !== 1 ? 's' : ''}</strong>
-                  {extras.size > 0 && <> + <strong style={{ color: 'var(--text-2)' }}>{extras.size} extra{extras.size !== 1 ? 's' : ''}</strong></>}.
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-faint)', lineHeight: 1.6 }}>
+                  Your selection: <strong style={{ color: 'var(--text-muted)' }}>{topics.size} topic{topics.size !== 1 ? 's' : ''}</strong>
+                  {extras.size > 0 && <> + <strong style={{ color: 'var(--text-muted)' }}>{extras.size} extra{extras.size !== 1 ? 's' : ''}</strong></>}.
                   You can update preferences anytime from your profile.
                 </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
-              <button className="btn btn-ghost" onClick={() => setStep(2)}>Back</button>
+              <button className="btn btn-ghost" onClick={() => setStep(2)} type="button">Back</button>
               <button
                 className="btn btn-primary"
                 onClick={handleSubmit}
                 disabled={submitting || !email.trim()}
+                type="button"
               >
                 {submitting ? 'Subscribing...' : 'Subscribe'}
               </button>
@@ -208,20 +207,20 @@ export default function NewsletterPage() {
 
         {/* Step 4: Confirmation */}
         {step === 4 && (
-          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '32px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', border: '1px solid var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.5" strokeLinecap="round">
+          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '2rem 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>You are subscribed</div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>First digest in the next send window</div>
+                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.05rem' }}>You are subscribed</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-faint)', marginTop: 2 }}>First digest arrives in the next send window</div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <Link href="/" className="btn btn-ghost" style={{ fontSize: 12 }}>Back to feed</Link>
+              <Link href="/" className="btn btn-ghost" style={{ fontSize: '0.78rem' }}>Back to feed</Link>
             </div>
           </div>
         )}

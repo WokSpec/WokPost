@@ -71,7 +71,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
         if (next) { next.setAttribute('data-focused', '1'); next.scrollIntoView({ block: 'nearest' }); }
       }
       if (e.key === 'Enter') {
-        const focused = document.querySelector<HTMLAnchorElement>('.card[data-focused] .card-title a, .card[data-focused] a');
+        const focused = document.querySelector<HTMLAnchorElement>('.card[data-focused] a');
         focused?.click();
       }
     };
@@ -87,6 +87,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
         try { localStorage.setItem('wokpost-bookmarks', JSON.stringify([...next])); } catch { /* ignore */ }
         return next;
       });
+      return;
     }
     setBookmarks(prev => {
       const next = new Set(prev);
@@ -161,7 +162,10 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
     });
     setSaveFeedLoading(false);
     setSaveFeedMsg(res.ok ? 'Saved' : 'Error saving');
-    if (res.ok) { setSaveFeedName(''); setTimeout(() => { setShowSaveFeed(false); setSaveFeedMsg(''); }, 1000); }
+    if (res.ok) {
+      setSaveFeedName('');
+      setTimeout(() => { setShowSaveFeed(false); setSaveFeedMsg(''); }, 1000);
+    }
   };
 
   return (
@@ -187,7 +191,11 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
 
         <div className="sort-tabs">
           {(['latest', 'trending', 'impact'] as const).map(s => (
-            <button key={s} className={`sort-tab${sort === s ? ' active' : ''}`} onClick={() => setSort(s)}>
+            <button
+              key={s}
+              className={`sort-tab${sort === s ? ' active' : ''}`}
+              onClick={() => setSort(s)}
+            >
               {s === 'latest' ? 'Latest' : s === 'trending' ? 'Trending' : 'AI Impact'}
             </button>
           ))}
@@ -198,16 +206,16 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
           onClick={() => setShowBookmarks(v => !v)}
           title="Saved stories"
         >
-          Saved {bookmarks.size > 0 && `(${bookmarks.size})`}
+          Saved{bookmarks.size > 0 ? ` (${bookmarks.size})` : ''}
         </button>
 
         <div ref={saveFeedRef} style={{ position: 'relative' }}>
-          <button className="sort-tab" onClick={() => setShowSaveFeed(v => !v)} title="Save this feed preset">
+          <button className="sort-tab" onClick={() => setShowSaveFeed(v => !v)} title="Save current feed as preset">
             Save Feed
           </button>
           {showSaveFeed && (
             <div className="save-feed-popover">
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-3)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-faint)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
                 Save Feed Preset
               </div>
               <input
@@ -218,7 +226,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
                 onKeyDown={e => e.key === 'Enter' && handleSaveFeed()}
               />
               {saveFeedMsg && (
-                <div style={{ fontSize: 11, color: saveFeedMsg === 'Saved' ? 'var(--green)' : 'var(--red)' }}>
+                <div style={{ fontSize: '0.7rem', color: saveFeedMsg === 'Saved' ? 'var(--green)' : 'var(--red)', fontFamily: 'var(--font-mono)' }}>
                   {saveFeedMsg}
                 </div>
               )}
@@ -226,7 +234,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
                 className="btn btn-primary"
                 onClick={handleSaveFeed}
                 disabled={saveFeedLoading || !saveFeedName.trim()}
-                style={{ fontSize: 11, padding: '6px 12px' }}
+                style={{ fontSize: '0.72rem', padding: '6px 14px' }}
               >
                 {saveFeedLoading ? 'Saving...' : 'Save'}
               </button>
@@ -234,12 +242,18 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
           )}
         </div>
 
-        <button className="refresh-btn" onClick={handleRefresh} disabled={refreshing} aria-label="Refresh feed" title="Refresh">
+        <button
+          className="refresh-btn"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          aria-label="Refresh feed"
+          title="Refresh"
+        >
           <IconRefresh spinning={refreshing} />
         </button>
       </div>
 
-      {/* Stats bar */}
+      {/* Stats */}
       <div className="feed-stats">
         <span>
           {showBookmarks
@@ -249,18 +263,28 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
               : `${allItems.length} stories`}
         </span>
         {search && (
-          <button className="clear-search-btn" onClick={() => setSearch('')}>Clear</button>
+          <button className="clear-search-btn" onClick={() => setSearch('')}>
+            Clear
+          </button>
         )}
       </div>
 
-      {/* Grid */}
+      {/* Grid or Empty */}
       {displayItems.length === 0 ? (
         <div className="feed-empty">
-          {showBookmarks
-            ? <><div style={{ fontWeight: 600, marginBottom: 6 }}>No saved stories yet</div>Sign in and bookmark articles to build your reading list.</>
-            : search
-              ? <><div style={{ fontWeight: 600, marginBottom: 6 }}>No results for &ldquo;{search}&rdquo;</div><button className="clear-search-btn" onClick={() => setSearch('')}>Clear search</button></>
-              : 'No stories yet. Check back soon.'}
+          {showBookmarks ? (
+            <>
+              <div style={{ fontWeight: 600, marginBottom: 6, fontFamily: 'var(--font-heading)' }}>No saved stories yet</div>
+              Sign in and bookmark articles to build your reading list.
+            </>
+          ) : search ? (
+            <>
+              <div style={{ fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-heading)' }}>No results for &ldquo;{search}&rdquo;</div>
+              <button className="clear-search-btn" onClick={() => setSearch('')}>Clear search</button>
+            </>
+          ) : (
+            'No stories yet. Check back soon.'
+          )}
         </div>
       ) : (
         <div className="feed-grid">
@@ -279,7 +303,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
       {/* Load more */}
       {!showBookmarks && !search && hasMore && (
         <button className="load-more-btn" onClick={loadMore} disabled={loading}>
-          {loading ? 'Loading...' : 'Load more'}
+          {loading ? 'Loading...' : 'Load more stories'}
         </button>
       )}
     </div>

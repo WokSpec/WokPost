@@ -8,14 +8,14 @@ import type { FeedItem } from '@/lib/feed/types';
 import { NewsletterFormInline } from './NewsletterForm';
 import { AuthButton } from './AuthButton';
 
-/* ── SVG Icons (inline, no external dep) ───────────────────────────── */
-const IconBookmark = ({ filled }: { filled?: boolean }) => (
+/* ── SVG Icons ──────────────────────────────────────────────────────── */
+export const IconBookmark = ({ filled }: { filled?: boolean }) => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
   </svg>
 );
 
-const IconShare = () => (
+export const IconShare = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
     <polyline points="16 6 12 2 8 6" />
@@ -23,7 +23,7 @@ const IconShare = () => (
   </svg>
 );
 
-const IconRefresh = ({ spinning }: { spinning?: boolean }) => (
+export const IconRefresh = ({ spinning }: { spinning?: boolean }) => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={spinning ? 'spin' : undefined}>
     <polyline points="23 4 23 10 17 10" />
     <polyline points="1 20 1 14 7 14" />
@@ -31,15 +31,17 @@ const IconRefresh = ({ spinning }: { spinning?: boolean }) => (
   </svg>
 );
 
-const IconSearch = () => (
+export const IconSearch = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 
-const IconClose = () => (
+export const IconClose = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
@@ -49,15 +51,25 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="site-header-inner">
         <Link href="/" className="site-logo" aria-label="WokPost home">
-          WokPost<span className="site-logo-dot" />
+          WokPost
+          <span className="site-logo-dot" aria-hidden="true" />
         </Link>
-        <nav style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+        <nav className="header-nav">
           <Link href="/" className="nav-link">Feed</Link>
-          <Link href="/ai" className="nav-link" style={{ color: 'var(--c-ai)' }}>AI</Link>
-          <Link href="/newsletter" className="nav-link">Newsletter</Link>
-          <a href="https://wokspec.org" target="_blank" rel="noopener noreferrer" className="nav-link">WokSpec</a>
-          <AuthButton />
+          <Link href="/newsletter" className="nav-link" data-hide-mobile="">Newsletter</Link>
+          <a
+            href="https://wokspec.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-link"
+            data-hide-mobile=""
+          >
+            WokSpec
+          </a>
         </nav>
+        <div className="header-actions">
+          <AuthButton />
+        </div>
       </div>
     </header>
   );
@@ -66,9 +78,21 @@ export function SiteHeader() {
 /* ── Category Strip ──────────────────────────────────────────────────── */
 export function CategoryStrip({ active }: { active?: string }) {
   return (
-    <div className="cat-strip">
+    <div className="cat-strip" role="navigation" aria-label="Browse categories">
+      <Link
+        href="/"
+        className={`cat-pill${!active ? ' active' : ''}`}
+        style={{ '--cat-color': 'var(--text-muted)' } as React.CSSProperties}
+      >
+        All
+      </Link>
       {Object.entries(CATEGORIES).map(([id, cat]) => (
-        <Link key={id} href={`/${id}`} className={`cat-pill${active === id ? ' active' : ''}`} style={{ color: cat.color }}>
+        <Link
+          key={id}
+          href={`/${id}`}
+          className={`cat-pill${active === id ? ' active' : ''}`}
+          style={{ '--cat-color': cat.color } as React.CSSProperties}
+        >
           {cat.label}
         </Link>
       ))}
@@ -77,7 +101,11 @@ export function CategoryStrip({ active }: { active?: string }) {
 }
 
 /* ── Feed Card ───────────────────────────────────────────────────────── */
-export function FeedCard({ item, bookmarked: initialBookmarked, onBookmark }: {
+export function FeedCard({
+  item,
+  bookmarked: initialBookmarked,
+  onBookmark,
+}: {
   item: FeedItem;
   index?: number;
   bookmarked?: boolean;
@@ -91,8 +119,12 @@ export function FeedCard({ item, bookmarked: initialBookmarked, onBookmark }: {
 
   const cat = CATEGORIES[item.category];
   const showImage = !!(item.thumbnail && !imgFailed);
-  const domain = (() => { try { return new URL(item.url).hostname.replace(/^www\./, ''); } catch { return ''; } })();
-  const readingTime = Math.max(1, Math.ceil((item.summary?.length ?? 0) / 200 + (item.title.length / 100)));
+  const domain = (() => {
+    try { return new URL(item.url).hostname.replace(/^www\./, ''); }
+    catch { return ''; }
+  })();
+  const readingTime = Math.max(1, Math.ceil((item.summary?.length ?? 0) / 200 + item.title.length / 100));
+  const catColor = cat?.color ?? 'var(--accent)';
 
   const handleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -135,28 +167,44 @@ export function FeedCard({ item, bookmarked: initialBookmarked, onBookmark }: {
   };
 
   return (
-    <div className={`card${showImage ? ' card-with-image' : ''}`}>
+    <div
+      className={`card${showImage ? ' card-with-image' : ''}`}
+      style={{ '--card-color': catColor } as React.CSSProperties}
+    >
       {showImage && (
         <a href={item.url} target="_blank" rel="noopener noreferrer" className="card-image-link" tabIndex={-1}>
           <div className="card-image-wrap">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={item.thumbnail} alt="" className="card-image" loading="lazy" onError={() => setImgFailed(true)} />
+            <img
+              src={item.thumbnail}
+              alt=""
+              className="card-image"
+              loading="lazy"
+              onError={() => setImgFailed(true)}
+            />
           </div>
         </a>
       )}
       <div className="card-body">
         <div className="card-header-row">
-          <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-            <span className="card-tag" style={{ color: cat?.color }}>{cat?.label ?? item.category}</span>
+          <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="card-tag" style={{ color: catColor }}>{cat?.label ?? item.category}</span>
             {item.sourceTier === 1 && <span className="tier1-badge">T1</span>}
-            {(item.sourceType === 'rss' && item.sourceName.startsWith('arXiv') || item.sourceName === 'Papers with Code') && (
+            {(item.sourceType === 'rss' && (item.sourceName.startsWith('arXiv') || item.sourceName === 'Papers with Code')) && (
               <span className="source-type-badge">Paper</span>
             )}
             {item.sourceType === 'github' && <span className="source-type-badge">Repo</span>}
           </div>
-          <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            {item.aiTagged && <span className="ai-badge">{item.aiScore}/10</span>}
-            <button className="share-btn" onClick={handleShare} title={shared ? 'Copied' : 'Share'} aria-label="Share">
+          <div style={{ display: 'flex', gap: 2, alignItems: 'center', flexShrink: 0 }}>
+            {item.aiTagged && (
+              <span className="ai-badge">AI {item.aiScore}/10</span>
+            )}
+            <button
+              className="share-btn"
+              onClick={handleShare}
+              title={shared ? 'Copied' : 'Share'}
+              aria-label="Share story"
+            >
               {shared
                 ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
                 : <IconShare />}
@@ -164,7 +212,7 @@ export function FeedCard({ item, bookmarked: initialBookmarked, onBookmark }: {
             <button
               className={`bookmark-btn${bookmarked ? ' active' : ''}`}
               onClick={handleBookmark}
-              title={session ? (bookmarked ? 'Remove' : 'Save') : 'Sign in to save'}
+              title={session ? (bookmarked ? 'Remove bookmark' : 'Save story') : 'Sign in to save'}
               aria-label={bookmarked ? 'Remove bookmark' : 'Save story'}
               style={{ opacity: saving ? 0.4 : undefined }}
             >
@@ -178,29 +226,34 @@ export function FeedCard({ item, bookmarked: initialBookmarked, onBookmark }: {
         </a>
 
         {item.summary && !showImage && (
-          <div className="card-summary">{item.summary.slice(0, 120)}{item.summary.length > 120 ? '\u2026' : ''}</div>
+          <div className="card-summary">
+            {item.summary.slice(0, 120)}{item.summary.length > 120 ? '\u2026' : ''}
+          </div>
         )}
 
         <div className="card-meta">
           {domain && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" width={12} height={12} className="source-favicon"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`}
+              alt=""
+              width={12}
+              height={12}
+              className="source-favicon"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
           )}
-          <span style={{ fontWeight: item.sourceTier === 1 ? 600 : undefined, color: item.sourceTier === 1 ? 'var(--text-2)' : undefined }}>
+          <span style={{ fontWeight: item.sourceTier === 1 ? 600 : undefined, color: item.sourceTier === 1 ? 'var(--text-muted)' : undefined }}>
             {item.sourceName}
           </span>
-          <span style={{ color: 'var(--border-2)' }}>·</span>
+          <span style={{ color: 'var(--border-strong)' }}>·</span>
           <span>{timeAgo(item.publishedAt)}</span>
           <span className="reading-time">{readingTime}m read</span>
           {item.score !== undefined && item.sourceType !== 'github' && (
-            <><span style={{ color: 'var(--border-2)' }}>·</span><span>{item.score} pts</span></>
+            <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{item.score} pts</span></>
           )}
           {item.sourceType === 'github' && item.score !== undefined && (
-            <><span style={{ color: 'var(--border-2)' }}>·</span><span>{item.score.toLocaleString()} stars</span></>
-          )}
-          {item.commentCount !== undefined && item.commentCount > 0 && (
-            <><span style={{ color: 'var(--border-2)' }}>·</span><span>{item.commentCount} comments</span></>
+            <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{item.score.toLocaleString()} stars</span></>
           )}
         </div>
       </div>
@@ -213,21 +266,21 @@ export function NewsletterBar() {
   return (
     <section className="newsletter-bar">
       <div className="site-container">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32, alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
               WokPost Digest
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
-              Two summaries a month. Personalized to what you care about.
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
+              Stay in the loop
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-              Select your topics. No spam. Unsubscribe anytime.
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 320 }}>
+              Two summaries a month, curated from verified sources. No spam.
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
             <NewsletterFormInline />
-            <Link href="/newsletter" style={{ fontSize: 11, color: 'var(--text-3)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+            <Link href="/newsletter" style={{ fontSize: '0.7rem', color: 'var(--text-faint)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
               Customize topics first
             </Link>
           </div>
@@ -242,27 +295,47 @@ export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontWeight: 600, color: 'var(--text-2)', letterSpacing: '-0.02em' }}>WokPost</span>
-          <span>Open source. Unbiased. No algorithms deciding your news.</span>
-          <span style={{ marginTop: 2 }}>
-            &copy; {new Date().getFullYear()}{' '}
-            <a href="https://wokspec.org" style={{ color: 'var(--text-3)' }} target="_blank" rel="noopener noreferrer">Wok Specialists</a>
-          </span>
+        <div className="footer-grid">
+          <div>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.03em', marginBottom: 4 }}>
+              WokPost
+            </div>
+            <p className="footer-brand-desc">
+              Open source, unbiased news. No algorithms deciding your feed. No sponsored content.
+            </p>
+          </div>
+          <div>
+            <div className="footer-col-title">Read</div>
+            <Link href="/" className="footer-link">All Stories</Link>
+            <Link href="/ai" className="footer-link">AI &amp; Research</Link>
+            <Link href="/science" className="footer-link">Science</Link>
+            <Link href="/business" className="footer-link">Business</Link>
+          </div>
+          <div>
+            <div className="footer-col-title">Account</div>
+            <Link href="/newsletter" className="footer-link">Newsletter</Link>
+            <Link href="/profile" className="footer-link">Profile</Link>
+            <Link href="/profile#bookmarks" className="footer-link">Bookmarks</Link>
+          </div>
+          <div>
+            <div className="footer-col-title">Project</div>
+            <a href="https://github.com/WokSpec/WokPost" target="_blank" rel="noopener noreferrer" className="footer-link">GitHub</a>
+            <a href="/api/feed?format=rss" className="footer-link">RSS Feed</a>
+            <a href="https://wokspec.org" target="_blank" rel="noopener noreferrer" className="footer-link">WokSpec</a>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-          <Link href="/newsletter" style={{ color: 'var(--text-3)' }}>Newsletter</Link>
-          <Link href="/profile" style={{ color: 'var(--text-3)' }}>My Feed</Link>
-          <a href="https://github.com/WokSpec/WokPost" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-3)' }}>GitHub</a>
-          <a href="/api/feed?format=rss" style={{ color: 'var(--text-3)' }}>RSS</a>
+        <div className="footer-bottom">
+          <span className="footer-bottom-text">
+            &copy; {new Date().getFullYear()} WokPost — Open source, unbiased.
+          </span>
+          <span className="footer-bottom-text" style={{ color: 'var(--text-faint)' }}>
+            Built by <a href="https://wokspec.org" style={{ color: 'var(--text-faint)' }} target="_blank" rel="noopener noreferrer">Wok Specialists</a>
+          </span>
         </div>
       </div>
     </footer>
   );
 }
-
-/* ── Exposed icons for other components ─────────────────────────────── */
-export { IconBookmark, IconShare, IconRefresh, IconSearch, IconClose };
 
 /* ── Utility ─────────────────────────────────────────────────────────── */
 function timeAgo(iso: string): string {

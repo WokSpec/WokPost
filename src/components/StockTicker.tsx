@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { StockQuote } from '@/app/api/stocks/route';
 
-const REFRESH_MS = 5 * 60 * 1000; // 5 min
+const REFRESH_MS = 5 * 60 * 1000;
 
 function fmt(n: number, decimals = 2): string {
   if (!n && n !== 0) return '—';
@@ -11,7 +11,7 @@ function fmt(n: number, decimals = 2): string {
 }
 
 function QuoteItem({ q }: { q: StockQuote }) {
-  const sign = q.change > 0 ? '+' : q.change < 0 ? '' : '';
+  const sign = q.change > 0 ? '+' : '';
   const cls = q.change > 0 ? 'ticker-up' : q.change < 0 ? 'ticker-down' : 'ticker-flat';
   const sym = q.symbol.replace('-USD', '');
   return (
@@ -55,8 +55,10 @@ export function StockTicker() {
       <div className="ticker-label-bar">
         <span className="ticker-label-text">Markets</span>
       </div>
-      <div className="ticker-track">
-        {doubled.map((q, i) => <QuoteItem key={`${q.symbol}-${i}`} q={q} />)}
+      <div className="ticker-track-outer">
+        <div className="ticker-track">
+          {doubled.map((q, i) => <QuoteItem key={`${q.symbol}-${i}`} q={q} />)}
+        </div>
       </div>
     </div>
   );

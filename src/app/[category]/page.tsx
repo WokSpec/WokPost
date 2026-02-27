@@ -33,31 +33,66 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
 
   return (
     <>
-      <div style={{ background: 'var(--bg-2)', borderBottom: '1px solid var(--border)', padding: '36px 24px' }}>
-        <div className="site-container">
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: cat.color, marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
-            {cat.label}
+      {/* Category header */}
+      <div
+        style={{
+          background: 'var(--surface)',
+          borderBottom: '1px solid var(--border)',
+          padding: '2.5rem 1.5rem',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Ambient orb */}
+        <div
+          className="orb orb-blue"
+          style={{
+            width: 400,
+            height: 400,
+            top: -200,
+            right: -100,
+            opacity: 0.25,
+          }}
+          aria-hidden="true"
+        />
+        <div className="site-container" style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: cat.color,
+                boxShadow: `0 0 12px ${cat.color}66`,
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cat.color, fontFamily: 'var(--font-mono)' }}>
+              {cat.label}
+            </span>
           </div>
-          <h1 style={{ fontSize: 'clamp(20px, 4vw, 30px)', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.2 }}>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.375rem, 3.5vw, 2rem)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 10 }}>
             {cat.label}
           </h1>
-          <p style={{ marginTop: 10, fontSize: 13, color: 'var(--text-2)', maxWidth: 580, lineHeight: 1.7 }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: 560, lineHeight: 1.7, marginBottom: 12 }}>
             {cat.description}
           </p>
-          <div style={{ marginTop: 12, fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
-            {sources.length} source{sources.length !== 1 ? 's' : ''} — {items.length} stories
+          <div style={{ fontSize: '0.68rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
+            {sources.length} source{sources.length !== 1 ? 's' : ''} &middot; {items.length} stories
           </div>
         </div>
       </div>
 
-      <div className="site-container" style={{ paddingTop: 14 }}>
+      {/* Category strip */}
+      <div className="site-container">
         <CategoryStrip active={category} />
       </div>
 
+      {/* Feed */}
       <div className="site-container" style={{ paddingTop: 8, paddingBottom: 48 }}>
         {items.length === 0 ? (
-          <div style={{ padding: '48px 0', color: 'var(--text-3)', fontSize: 13 }}>
-            No stories found. Check back soon.
+          <div className="feed-empty">
+            No stories found for this topic. Check back soon.
           </div>
         ) : (
           <InteractiveFeed initialItems={items.slice(0, 60)} category={category} initialTotal={items.length} />

@@ -25,7 +25,10 @@ async function getUserData(userId: string) {
     db.prepare(`SELECT * FROM bookmarks WHERE user_id = ?1 ORDER BY bookmarked_at DESC`).bind(userId).all(),
     db.prepare(`SELECT * FROM saved_feeds WHERE user_id = ?1 ORDER BY created_at DESC`).bind(userId).all(),
   ]);
-  return { bookmarks: (bm.results ?? []) as BookmarkRow[], savedFeeds: (sf.results ?? []) as SavedFeedRow[] };
+  return {
+    bookmarks: (bm.results ?? []) as BookmarkRow[],
+    savedFeeds: (sf.results ?? []) as SavedFeedRow[],
+  };
 }
 
 export default async function ProfilePage() {
@@ -40,25 +43,37 @@ export default async function ProfilePage() {
   );
 
   return (
-    <div className="site-container" style={{ paddingTop: 40, paddingBottom: 80, maxWidth: 900 }}>
+    <div className="site-container" style={{ paddingTop: '2.5rem', paddingBottom: '5rem', maxWidth: 900 }}>
       {/* User header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 40, paddingBottom: 28, borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: '2.5rem', paddingBottom: '1.75rem', borderBottom: '1px solid var(--border)' }}>
         {user.image && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.image} alt="" width={56} height={56} style={{ borderRadius: '50%', border: '2px solid var(--border)' }} />
+          <img
+            src={user.image}
+            alt=""
+            width={52}
+            height={52}
+            style={{ borderRadius: '50%', border: '2px solid var(--border-strong)', flexShrink: 0 }}
+          />
         )}
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>{user.name ?? 'Anonymous'}</div>
-          <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>{user.email}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            {user.name ?? 'Anonymous'}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-faint)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+            {user.email}
+          </div>
         </div>
         <form action={async () => { 'use server'; await signOut({ redirectTo: '/' }); }}>
-          <button type="submit" style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-2)', fontSize: 13, padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}>
+          <button
+            type="submit"
+            style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.78rem', padding: '8px 16px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 600 }}
+          >
             Sign out
           </button>
         </form>
       </div>
 
-      {/* Client-rendered interactive sections */}
       <ProfileClient
         initialBookmarks={bookmarks}
         initialSavedFeeds={savedFeeds}

@@ -19,7 +19,7 @@ export function NewsletterFormInline() {
 
   if (status === 'ok') {
     return (
-      <div style={{ fontSize: 13, color: 'var(--green)', padding: '9px 0' }}>
+      <div style={{ fontSize: '0.82rem', color: 'var(--green)', padding: '9px 0', fontFamily: 'var(--font-heading)', fontWeight: 600 }}>
         Subscribed. Check your inbox.
       </div>
     );
@@ -27,10 +27,18 @@ export function NewsletterFormInline() {
 
   return (
     <form className="newsletter-inline" onSubmit={submit}>
-      <input type="email" name="email" required placeholder="you@example.com" autoComplete="email" />
+      <input
+        type="email"
+        name="email"
+        required
+        placeholder="you@example.com"
+        autoComplete="email"
+      />
       <button type="submit">Subscribe</button>
       {status === 'err' && (
-        <span style={{ color: 'var(--red)', fontSize: 11, alignSelf: 'center' }}>Try again</span>
+        <span style={{ color: 'var(--red)', fontSize: '0.7rem', fontFamily: 'var(--font-mono)' }}>
+          Try again
+        </span>
       )}
     </form>
   );
