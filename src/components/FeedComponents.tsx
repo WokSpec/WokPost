@@ -123,7 +123,10 @@ export function FeedCard({
     try { return new URL(item.url).hostname.replace(/^www\./, ''); }
     catch { return ''; }
   })();
-  const readingTime = Math.max(1, Math.ceil((item.summary?.length ?? 0) / 200 + item.title.length / 100));
+  const isRepo = item.contentType === 'repo';
+  const isPaper = item.contentType === 'paper';
+  const internalHref = `/post/${encodeURIComponent(item.id)}`;
+  const readingTime = isRepo ? null : Math.max(1, Math.ceil((item.summary?.length ?? 0) / 200 + item.title.length / 100));
   const catColor = cat?.color ?? 'var(--accent)';
 
   const handleBookmark = async (e: React.MouseEvent) => {
@@ -172,7 +175,7 @@ export function FeedCard({
       style={{ '--card-color': catColor } as React.CSSProperties}
     >
       {showImage && (
-        <a href={item.url} target="_blank" rel="noopener noreferrer" className="card-image-link" tabIndex={-1}>
+        <Link href={internalHref} className="card-image-link" tabIndex={-1}>
           <div className="card-image-wrap">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -183,17 +186,15 @@ export function FeedCard({
               onError={() => setImgFailed(true)}
             />
           </div>
-        </a>
+        </Link>
       )}
       <div className="card-body">
         <div className="card-header-row">
           <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="card-tag" style={{ color: catColor }}>{cat?.label ?? item.category}</span>
             {item.sourceTier === 1 && <span className="tier1-badge">T1</span>}
-            {(item.sourceType === 'rss' && (item.sourceName.startsWith('arXiv') || item.sourceName === 'Papers with Code')) && (
-              <span className="source-type-badge">Paper</span>
-            )}
-            {item.sourceType === 'github' && <span className="source-type-badge">Repo</span>}
+            {isRepo && <span className="source-type-badge source-type-repo">Repo</span>}
+            {isPaper && <span className="source-type-badge source-type-paper">Paper</span>}
           </div>
           <div style={{ display: 'flex', gap: 2, alignItems: 'center', flexShrink: 0 }}>
             {item.aiTagged && (
@@ -221,9 +222,9 @@ export function FeedCard({
           </div>
         </div>
 
-        <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+        <Link href={internalHref} style={{ display: 'block' }}>
           <div className="card-title">{item.title}</div>
-        </a>
+        </Link>
 
         {item.summary && !showImage && (
           <div className="card-summary">
@@ -248,11 +249,12 @@ export function FeedCard({
           </span>
           <span style={{ color: 'var(--border-strong)' }}>·</span>
           <span>{timeAgo(item.publishedAt)}</span>
-          <span className="reading-time">{readingTime}m read</span>
-          {item.score !== undefined && item.sourceType !== 'github' && (
+          {readingTime && <span className="reading-time">{readingTime}m read</span>}
+          {isRepo && item.repoLanguage && <span className="reading-time">{item.repoLanguage}</span>}
+          {item.score !== undefined && !isRepo && (
             <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{item.score} pts</span></>
           )}
-          {item.sourceType === 'github' && item.score !== undefined && (
+          {isRepo && item.score !== undefined && (
             <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{item.score.toLocaleString()} stars</span></>
           )}
         </div>

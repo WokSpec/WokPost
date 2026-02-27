@@ -299,4 +299,100 @@ export const FEED_SOURCES: FeedSource[] = [
   { id: 'rss-foodtank',       name: 'Food Tank',          url: 'https://foodtank.com/news/feed/',                                          type: 'rss',    defaultCategory: 'farming', tier: 2 },
   { id: 'rss-sd-agri',        name: 'ScienceDaily · Agri',url: 'https://www.sciencedaily.com/rss/plants_animals/agriculture.xml',          type: 'rss',    defaultCategory: 'farming', tier: 2 },
 
+
+  // ══════════════════════════════════════════════════════════════════
+  // SPACE & EXPLORATION — NASA, launch coverage, astrophysics
+  // ══════════════════════════════════════════════════════════════════
+
+  { id: 'rss-nasa-news',      name: 'NASA News',          url: 'https://www.nasa.gov/rss/dyn/breaking_news.rss',                           type: 'rss',    defaultCategory: 'space', tier: 1 },
+  { id: 'rss-spacenews',      name: 'Space News',         url: 'https://spacenews.com/feed/',                                              type: 'rss',    defaultCategory: 'space', tier: 1 },
+  { id: 'rss-nasaspaceflight',name: 'NASASpaceFlight',    url: 'https://www.nasaspaceflight.com/feed/',                                    type: 'rss',    defaultCategory: 'space', tier: 2 },
+  { id: 'rss-planetary',      name: 'Planetary Society',  url: 'https://www.planetary.org/rss/articles',                                   type: 'rss',    defaultCategory: 'space', tier: 1 },
+  { id: 'rss-esa',            name: 'ESA News',           url: 'https://www.esa.int/rssfeed/Our_Activities/Space_Science',                  type: 'rss',    defaultCategory: 'space', tier: 1 },
+  { id: 'rss-sky-telescope',  name: 'Sky & Telescope',    url: 'https://skyandtelescope.org/news/feed/',                                   type: 'rss',    defaultCategory: 'space', tier: 2 },
+  { id: 'rss-astronomy',      name: 'Astronomy Magazine',  url: 'https://astronomy.com/rss/news',                                          type: 'rss',    defaultCategory: 'space', tier: 2 },
+  { id: 'arxiv-astro',        name: 'arXiv · Astrophysics',url: 'https://export.arxiv.org/rss/astro-ph',                                   type: 'rss',    defaultCategory: 'space', tier: 1 },
+
+
+  // ══════════════════════════════════════════════════════════════════
+  // GAMING — Press, analytics, industry news
+  // ══════════════════════════════════════════════════════════════════
+
+  { id: 'rss-polygon',        name: 'Polygon',            url: 'https://www.polygon.com/rss/index.xml',                                    type: 'rss',    defaultCategory: 'gaming', tier: 2 },
+  { id: 'rss-kotaku',         name: 'Kotaku',             url: 'https://kotaku.com/rss',                                                   type: 'rss',    defaultCategory: 'gaming', tier: 2 },
+  { id: 'rss-pcgamer',        name: 'PC Gamer',           url: 'https://www.pcgamer.com/rss/',                                             type: 'rss',    defaultCategory: 'gaming', tier: 2 },
+  { id: 'rss-rps',            name: 'Rock Paper Shotgun', url: 'https://www.rockpapershotgun.com/feed/news',                               type: 'rss',    defaultCategory: 'gaming', tier: 2 },
+  { id: 'rss-eurogamer',      name: 'Eurogamer',          url: 'https://www.eurogamer.net/?format=rss',                                    type: 'rss',    defaultCategory: 'gaming', tier: 2 },
+  { id: 'rss-ign',            name: 'IGN',                url: 'https://feeds.ign.com/ign/all',                                            type: 'rss',    defaultCategory: 'gaming', tier: 2 },
+  { id: 'rss-gamedeveloper',  name: 'Game Developer',     url: 'https://www.gamedeveloper.com/rss.xml',                                    type: 'rss',    defaultCategory: 'gaming', tier: 2 },
+  { id: 'gh-gamedev',         name: 'GitHub · Game Dev',  url: 'https://api.github.com/search/repositories?q=topic:game-development+stars:>300+pushed:>2024-01-01&sort=updated&per_page=10', type: 'github', defaultCategory: 'gaming', tier: 2 },
+  { id: 'gh-gameengine',      name: 'GitHub · Engines',   url: 'https://api.github.com/search/repositories?q=topic:game-engine+stars:>500+pushed:>2024-01-01&sort=stars&per_page=8',         type: 'github', defaultCategory: 'gaming', tier: 2 },
+
+
+  // ══════════════════════════════════════════════════════════════════
+  // ROBOTICS & HARDWARE — Embodied AI, automation, physical systems
+  // ══════════════════════════════════════════════════════════════════
+
+  { id: 'rss-robohub',        name: 'Robohub',            url: 'https://robohub.org/feed/',                                                type: 'rss',    defaultCategory: 'robotics', tier: 2 },
+  { id: 'rss-ieee-spectrum-ro',name: 'IEEE · Robotics',   url: 'https://spectrum.ieee.org/feeds/robotics.rss',                             type: 'rss',    defaultCategory: 'robotics', tier: 1 },
+  { id: 'rss-therobotreport', name: 'The Robot Report',   url: 'https://www.therobotreport.com/feed/',                                     type: 'rss',    defaultCategory: 'robotics', tier: 2 },
+  { id: 'rss-automationworld',name: 'Automation World',   url: 'https://www.automationworld.com/rss.xml',                                  type: 'rss',    defaultCategory: 'robotics', tier: 2 },
+  { id: 'gh-robotics',        name: 'GitHub · Robotics',  url: 'https://api.github.com/search/repositories?q=topic:robotics+stars:>200+pushed:>2024-01-01&sort=updated&per_page=10',          type: 'github', defaultCategory: 'robotics', alwaysAiTagged: true, tier: 2 },
+  { id: 'gh-ros',             name: 'GitHub · ROS',       url: 'https://api.github.com/search/repositories?q=topic:ros+stars:>100+pushed:>2024-01-01&sort=updated&per_page=8',                type: 'github', defaultCategory: 'robotics', tier: 2 },
+
+
+  // ══════════════════════════════════════════════════════════════════
+  // LAW & DIGITAL RIGHTS — Policy, regulation, court
+  // ══════════════════════════════════════════════════════════════════
+
+  { id: 'rss-eff',            name: 'EFF Deeplinks',      url: 'https://www.eff.org/rss/updates.xml',                                      type: 'rss',    defaultCategory: 'law', tier: 1 },
+  { id: 'rss-aclu',           name: 'ACLU News',          url: 'https://www.aclu.org/news/feed',                                           type: 'rss',    defaultCategory: 'law', tier: 1 },
+  { id: 'rss-lawfare',        name: 'Lawfare',            url: 'https://www.lawfaremedia.org/feed',                                        type: 'rss',    defaultCategory: 'law', tier: 1 },
+  { id: 'rss-propublica',     name: 'ProPublica',         url: 'https://www.propublica.org/feeds/propublica/main',                         type: 'rss',    defaultCategory: 'law', tier: 1 },
+  { id: 'rss-just-security',  name: 'Just Security',      url: 'https://www.justsecurity.org/feed/',                                       type: 'rss',    defaultCategory: 'law', tier: 1 },
+  { id: 'rss-scotusblog',     name: 'SCOTUSblog',         url: 'https://www.scotusblog.com/feed/',                                         type: 'rss',    defaultCategory: 'law', tier: 1 },
+
+
+  // ══════════════════════════════════════════════════════════════════
+  // CYBERSECURITY — GitHub repos for security tools / research
+  // ══════════════════════════════════════════════════════════════════
+
+  { id: 'gh-security',        name: 'GitHub · Security',  url: 'https://api.github.com/search/repositories?q=topic:security+stars:>500+pushed:>2024-01-01&sort=updated&per_page=10',          type: 'github', defaultCategory: 'cybersecurity', tier: 2 },
+  { id: 'gh-pentest',         name: 'GitHub · Pentest',   url: 'https://api.github.com/search/repositories?q=topic:penetration-testing+stars:>200+pushed:>2024-01-01&sort=updated&per_page=8',type: 'github', defaultCategory: 'cybersecurity', tier: 2 },
+  { id: 'rss-threatpost',     name: 'Infosecurity Mag',   url: 'https://www.infosecurity-magazine.com/rss/news/',                          type: 'rss',    defaultCategory: 'cybersecurity', tier: 2 },
+  { id: 'rss-recordedfuture', name: 'Recorded Future',    url: 'https://www.recordedfuture.com/feed',                                      type: 'rss',    defaultCategory: 'cybersecurity', tier: 2 },
+
+
+  // ══════════════════════════════════════════════════════════════════
+  // CLIMATE — GitHub repos for climate data science / tools
+  // ══════════════════════════════════════════════════════════════════
+
+  { id: 'gh-climate-data',    name: 'GitHub · Climate',   url: 'https://api.github.com/search/repositories?q=topic:climate+stars:>100+pushed:>2024-01-01&sort=updated&per_page=10',           type: 'github', defaultCategory: 'climate', tier: 2 },
+  { id: 'rss-grist',          name: 'Grist',              url: 'https://grist.org/feed/',                                                  type: 'rss',    defaultCategory: 'climate', tier: 2 },
+  { id: 'rss-climatecentral', name: 'Climate Central',    url: 'https://www.climatecentral.org/feeds/all',                                 type: 'rss',    defaultCategory: 'climate', tier: 1 },
+  { id: 'rss-mongabay',       name: 'Mongabay',           url: 'https://news.mongabay.com/feed/',                                          type: 'rss',    defaultCategory: 'climate', tier: 2 },
+
+
+  // ══════════════════════════════════════════════════════════════════
+  // HEALTH — GitHub repos for medical AI / bioinformatics
+  // ══════════════════════════════════════════════════════════════════
+
+  { id: 'gh-bioinfo',         name: 'GitHub · Bioinformatics', url: 'https://api.github.com/search/repositories?q=topic:bioinformatics+stars:>200+pushed:>2024-01-01&sort=updated&per_page=8', type: 'github', defaultCategory: 'health', alwaysAiTagged: true, tier: 2 },
+  { id: 'rss-med-xpress-ai',  name: 'MedicalXpress · AI', url: 'https://medicalxpress.com/rss-feed/medical-research-news/',                type: 'rss',    defaultCategory: 'health', tier: 2 },
+  { id: 'arxiv-bio',          name: 'arXiv · BioMed',     url: 'https://export.arxiv.org/rss/q-bio.GN',                                    type: 'rss',    defaultCategory: 'health', tier: 1 },
+
+
+  // ══════════════════════════════════════════════════════════════════
+  // AI — Additional GitHub repos and research sources
+  // ══════════════════════════════════════════════════════════════════
+
+  { id: 'gh-ml-frameworks',   name: 'GitHub · ML Frameworks', url: 'https://api.github.com/search/repositories?q=topic:machine-learning+stars:>1000+pushed:>2024-01-01&sort=stars&per_page=10', type: 'github', defaultCategory: 'ai', alwaysAiTagged: true, tier: 2 },
+  { id: 'gh-nlp',             name: 'GitHub · NLP',       url: 'https://api.github.com/search/repositories?q=topic:natural-language-processing+stars:>300+pushed:>2024-01-01&sort=updated&per_page=8', type: 'github', defaultCategory: 'ai', alwaysAiTagged: true, tier: 2 },
+  { id: 'rss-interconnects',  name: 'Interconnects',      url: 'https://www.interconnects.ai/feed',                                        type: 'rss',    defaultCategory: 'ai', alwaysAiTagged: true, tier: 2 },
+  { id: 'rss-aidanfieldwork', name: 'AI Snake Oil',       url: 'https://www.aisnakeoil.com/feed',                                          type: 'rss',    defaultCategory: 'ethics', alwaysAiTagged: true, tier: 1 },
+  { id: 'arxiv-cs-se',        name: 'arXiv · Software Eng',url: 'https://export.arxiv.org/rss/cs.SE',                                     type: 'rss',    defaultCategory: 'ai', tier: 1 },
+  { id: 'rss-ghblog',         name: 'GitHub Blog',        url: 'https://github.blog/feed/',                                                type: 'rss',    defaultCategory: 'ai', tier: 2 },
+  { id: 'rss-simonwillison',  name: 'Simon Willison',     url: 'https://simonwillison.net/atom/everything/',                               type: 'rss',    defaultCategory: 'ai', alwaysAiTagged: true, tier: 2 },
+  { id: 'rss-lmsys',          name: 'LMSYS Blog',         url: 'https://lmsys.org/blog/rss.xml',                                           type: 'rss',    defaultCategory: 'ai', alwaysAiTagged: true, tier: 1 },
+
 ];

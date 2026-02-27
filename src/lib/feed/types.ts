@@ -43,6 +43,8 @@ export const CATEGORIES: Record<Category, { label: string; color: string; accent
   ethics:        { label: 'AI Ethics',            color: '#e879f9', accent: 'rgba(232,121,249,0.12)', description: 'Bias, safety, alignment, and the philosophy of AI.' },
 };
 
+export type ContentType = 'story' | 'paper' | 'repo';
+
 export interface FeedItem {
   id: string;
   title: string;
@@ -51,15 +53,19 @@ export interface FeedItem {
   sourceName: string;
   sourceType: 'rss' | 'reddit' | 'hn' | 'github';
   sourceTier: 1 | 2 | 3; // 1=top-tier journalism/research, 2=quality trade, 3=community
+  contentType: ContentType; // 'story' | 'paper' | 'repo'
   category: Category;
   aiTagged: boolean;
   aiScore: number; // 1-10
   publishedAt: string; // ISO
   summary: string;
-  tags: string[];
+  tags: string[]; // language + topics for repos
   thumbnail?: string;
   commentCount?: number;
-  score?: number; // reddit/HN upvotes or GitHub stars
+  score?: number; // reddit/HN upvotes, GitHub stars, PwC stars
+  // repo-specific
+  repoLanguage?: string;
+  repoTopics?: string[];
 }
 
 export interface FeedSource {

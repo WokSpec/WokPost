@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { FEED_SOURCES } from '@/lib/feed/sources';
 import { fetchAllSources } from '@/lib/feed/aggregator';
 import { CATEGORIES } from '@/lib/feed/types';
@@ -42,10 +43,8 @@ export default async function HomePage() {
 
       {/* Featured hero */}
       {featured && (
-        <a
-          href={featured.url}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href={`/post/${encodeURIComponent(featured.id)}`}
           className="featured-hero"
           style={featured.thumbnail ? { backgroundImage: `url(${featured.thumbnail})` } : {}}
         >
@@ -58,6 +57,8 @@ export default async function HomePage() {
                 {featured.aiTagged && (
                   <span className="ai-badge">AI {featured.aiScore}/10</span>
                 )}
+                {featured.contentType === 'repo' && <span className="source-type-badge source-type-repo">Repo</span>}
+                {featured.contentType === 'paper' && <span className="source-type-badge source-type-paper">Paper</span>}
               </div>
               <div className="hero-title">{featured.title}</div>
               {featured.summary && (
@@ -66,11 +67,13 @@ export default async function HomePage() {
               <div className="hero-meta">
                 <span>{featured.sourceName}</span>
                 <span>·</span>
-                <span className="hero-cta">Read story</span>
+                <span className="hero-cta">
+                  {featured.contentType === 'repo' ? 'View repository' : featured.contentType === 'paper' ? 'Read paper' : 'Read story'}
+                </span>
               </div>
             </div>
           </div>
-        </a>
+        </Link>
       )}
 
       {/* Main layout */}
@@ -95,7 +98,7 @@ export default async function HomePage() {
               {trending.map((item, i) => {
                 const cat = CATEGORIES[item.category];
                 return (
-                  <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" className="sidebar-story">
+                  <Link key={item.id} href={`/post/${encodeURIComponent(item.id)}`} className="sidebar-story">
                     <span className="sidebar-rank">{i + 1}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '0.6rem', fontWeight: 700, color: cat?.color, marginBottom: 2, letterSpacing: '0.07em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
@@ -106,11 +109,11 @@ export default async function HomePage() {
                       </div>
                       {item.score !== undefined && (
                         <div style={{ fontSize: '0.62rem', color: 'var(--text-faint)', marginTop: 3, fontFamily: 'var(--font-mono)' }}>
-                          {item.score} pts · {item.sourceName}
+                          {item.contentType === 'repo' ? `${item.score.toLocaleString()} stars` : `${item.score} pts`} · {item.sourceName}
                         </div>
                       )}
                     </div>
-                  </a>
+                  </Link>
                 );
               })}
             </div>
@@ -120,12 +123,12 @@ export default async function HomePage() {
               <div className="sidebar-widget">
                 <div className="section-title" style={{ marginBottom: 12 }}>AI Signal</div>
                 {topAI.map(item => (
-                  <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" className="sidebar-story">
+                  <Link key={item.id} href={`/post/${encodeURIComponent(item.id)}`} className="sidebar-story">
                     <span className="ai-badge" style={{ flexShrink: 0 }}>{item.aiScore}/10</span>
                     <span style={{ fontSize: '0.78rem', color: 'var(--text)', lineHeight: 1.45, fontFamily: 'var(--font-heading)', fontWeight: 500 }}>
                       {item.title}
                     </span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             )}

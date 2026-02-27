@@ -12,14 +12,25 @@ function readingTime(text: string): number {
   return Math.max(1, Math.ceil(text.split(/\s+/).length / 200));
 }
 
+// ── Favicon helper ──────────────────────────────────────────────────────────
+function Favicon({ url, size = 14 }: { url: string; size?: number }) {
+  let domain = '';
+  try { domain = new URL(url).hostname; } catch { return null; }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt="" width={size} height={size} style={{ borderRadius: 2, flexShrink: 0 }} />;
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const items = await fetchAllSources(FEED_SOURCES.slice(0, 40)).catch(() => []);
   const item = items.find(i => i.id === decodeURIComponent(id));
   if (!item) return { title: 'Story Not Found' };
+  const description = item.contentType === 'repo'
+    ? (item.summary || `Open source repository: ${item.title}`)
+    : item.summary?.slice(0, 160) || undefined;
   return {
     title: item.title,
-    description: item.summary?.slice(0, 160) || undefined,
+    description,
     openGraph: item.thumbnail ? { images: [{ url: item.thumbnail }] } : undefined,
   };
 }
@@ -36,96 +47,215 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   if (!item) notFound();
 
   const cat = CATEGORIES[item.category];
-  const rt = readingTime((item.summary ?? '') + item.title);
+  const catColor = cat?.color ?? 'var(--accent)';
   const domain = (() => {
     try { return new URL(item.url).hostname.replace(/^www\./, ''); }
     catch { return item.sourceName; }
   })();
+  const isRepo = item.contentType === 'repo';
+  const isPaper = item.contentType === 'paper';
+  const rt = isRepo ? null : readingTime((item.summary ?? '') + item.title);
+
+  // ── CTA label + icon ────────────────────────────────────────────────────────
+  const ctaLabel = isRepo ? 'View repository on GitHub' : isPaper ? 'Read full paper' : `Read original at ${domain}`;
+  const ctaIcon = isRepo
+    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    : isPaper
+      ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>;
 
   return (
     <>
-      {/* Article header */}
-      <div style={{ borderBottom: '1px solid var(--border)', padding: '3rem 1.5rem 2.5rem', background: 'var(--surface)', position: 'relative', overflow: 'hidden' }}>
+      {/* Page header band */}
+      <div style={{
+        borderBottom: '1px solid var(--border)',
+        padding: '3rem 1.5rem 2.5rem',
+        background: 'var(--surface)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
         <div
           className="orb orb-blue"
-          style={{ width: 500, height: 500, top: -250, right: -150, opacity: 0.15 }}
+          style={{ width: 500, height: 500, top: -250, right: -150, opacity: 0.12, background: `radial-gradient(circle, ${catColor} 0%, transparent 70%)` }}
           aria-hidden="true"
         />
-        <div className="site-container" style={{ maxWidth: 780, position: 'relative' }}>
-          {/* Eyebrow */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-            <a
-              href={`/${item.category}`}
-              style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cat?.color, fontFamily: 'var(--font-mono)' }}
-            >
+        <div className="site-container" style={{ maxWidth: 820, position: 'relative' }}>
+
+          {/* Eyebrow row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+            <a href={`/${item.category}`} style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: catColor, fontFamily: 'var(--font-mono)' }}>
               {cat?.label}
             </a>
+            {item.sourceTier === 1 && <span className="tier1-badge">T1</span>}
+            {isRepo && <span className="source-type-badge source-type-repo">Open Source Repo</span>}
+            {isPaper && <span className="source-type-badge source-type-paper">Research Paper</span>}
             {item.aiTagged && <span className="ai-badge">AI {item.aiScore}/10</span>}
-            {item.sourceTier === 1 && <span className="tier1-badge">Tier 1</span>}
           </div>
 
           {/* Headline */}
-          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.25rem, 3vw, 1.875rem)', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.2, maxWidth: 700, marginBottom: 16 }}>
+          <h1 style={{
+            fontFamily: 'var(--font-heading)',
+            fontSize: 'clamp(1.35rem, 3vw, 2rem)',
+            fontWeight: 800,
+            letterSpacing: '-0.03em',
+            lineHeight: 1.2,
+            maxWidth: 720,
+            marginBottom: isRepo ? 12 : 20,
+            wordBreak: 'break-word',
+          }}>
             {item.title}
           </h1>
 
-          {/* Summary */}
+          {/* Repo stats row */}
+          {isRepo && (
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', marginBottom: 20 }}>
+              {item.score !== undefined && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#facc15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  {item.score.toLocaleString()} stars
+                </span>
+              )}
+              {item.repoLanguage && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill={catColor} stroke="none"><circle cx="12" cy="12" r="8"/></svg>
+                  {item.repoLanguage}
+                </span>
+              )}
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
+                Updated {new Date(item.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+          )}
+
+          {/* Summary / abstract / description */}
           {item.summary && (
-            <p style={{ fontSize: '1rem', color: 'var(--text-muted)', lineHeight: 1.75, maxWidth: 660, marginBottom: 20 }}>
+            <div style={{
+              fontSize: '1rem',
+              color: 'var(--text-muted)',
+              lineHeight: 1.8,
+              maxWidth: 700,
+              marginBottom: 24,
+              padding: isRepo ? '14px 18px' : 0,
+              background: isRepo ? 'var(--surface-raised)' : 'transparent',
+              border: isRepo ? '1px solid var(--border)' : 'none',
+              borderRadius: isRepo ? 'var(--radius)' : 0,
+            }}>
+              {isPaper && (
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
+                  Abstract
+                </div>
+              )}
+              {isRepo && (
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>
+                  About this repository
+                </div>
+              )}
               {item.summary}
-            </p>
+            </div>
+          )}
+
+          {/* Repo topics */}
+          {isRepo && item.repoTopics && item.repoTopics.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
+              {item.repoTopics.map(t => (
+                <span key={t} style={{
+                  fontSize: '0.65rem',
+                  fontFamily: 'var(--font-mono)',
+                  padding: '3px 9px',
+                  borderRadius: 999,
+                  background: 'var(--surface-raised)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-faint)',
+                }}>
+                  {t}
+                </span>
+              ))}
+            </div>
           )}
 
           {/* Meta bar */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-faint)', letterSpacing: '0.02em', fontFamily: 'var(--font-mono)', marginBottom: 24 }}>
+          <div style={{
+            display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center',
+            fontSize: '0.72rem', color: 'var(--text-faint)',
+            letterSpacing: '0.02em', fontFamily: 'var(--font-mono)', marginBottom: 28,
+          }}>
+            <Favicon url={item.url} />
             <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{item.sourceName}</span>
             <span>·</span>
             <span>{domain}</span>
-            <span>·</span>
-            <span>{new Date(item.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-            <span>·</span>
-            <span>{rt} min read</span>
-            {item.score !== undefined && (
+            {!isRepo && (
+              <>
+                <span>·</span>
+                <span>{new Date(item.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+              </>
+            )}
+            {rt && <><span>·</span><span>{rt} min read</span></>}
+            {!isRepo && item.score !== undefined && (
               <><span>·</span><span>{item.score} pts</span></>
             )}
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <a
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"
-              style={{ fontSize: '0.78rem' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: '0.82rem' }}
             >
-              Read original at {domain}
+              {ctaIcon}
+              {ctaLabel}
             </a>
-            <a
-              href={`/${item.category}`}
-              className="btn btn-ghost"
-              style={{ fontSize: '0.78rem' }}
-            >
+            <a href={`/${item.category}`} className="btn btn-ghost" style={{ fontSize: '0.78rem' }}>
               More {cat?.label}
             </a>
           </div>
 
           {/* Tier 1 note */}
-          {item.sourceTier === 1 && (
-            <div style={{ marginTop: 20, padding: '10px 14px', background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', color: 'var(--text-faint)', lineHeight: 1.6 }}>
+          {item.sourceTier === 1 && !isRepo && (
+            <div style={{
+              marginTop: 20, padding: '10px 14px',
+              background: 'rgba(250,204,21,0.05)', border: '1px solid rgba(250,204,21,0.15)',
+              borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', color: 'var(--text-faint)', lineHeight: 1.6,
+            }}>
               <span style={{ color: '#facc15', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>T1 SOURCE</span>
-              {' '}This article is from a Tier 1 publication — a peer-reviewed journal, major wire service, or established research institution.
+              {' '}This article comes from a Tier 1 publication — a peer-reviewed journal, major wire service, or established research institution.
             </div>
           )}
+
+          {/* WokPost summary note */}
+          <div style={{
+            marginTop: 16, padding: '10px 14px',
+            background: `rgba(${catColor.startsWith('#') ? hexToRgb(catColor) : '56,189,248'}, 0.04)`,
+            border: `1px solid rgba(${catColor.startsWith('#') ? hexToRgb(catColor) : '56,189,248'}, 0.12)`,
+            borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', color: 'var(--text-faint)', lineHeight: 1.6,
+          }}>
+            <span style={{ color: catColor, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>WOKPOST</span>
+            {' '}
+            {isRepo
+              ? 'This is an open source repository surfaced by WokPost. The description above is from the original GitHub repo. Click "View repository" to explore the code, issues, and contributors.'
+              : isPaper
+                ? 'The abstract above is sourced directly from the original paper. WokPost does not modify research content. Click "Read full paper" to access the complete research.'
+                : 'The excerpt above is sourced from the original publication. WokPost does not add editorial bias. Click the link below to read the full article at the source.'}
+          </div>
         </div>
       </div>
 
       {/* Comments */}
-      <div className="site-container" style={{ maxWidth: 780, paddingTop: 32, paddingBottom: 64 }}>
+      <div className="site-container" style={{ maxWidth: 820, paddingTop: 36, paddingBottom: 64 }}>
         <CommentsSection postId={item.id} />
       </div>
 
       <NewsletterBar />
     </>
   );
+}
+
+// ── Hex to RGB helper for opacity-aware backgrounds ─────────────────────────
+function hexToRgb(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
 }

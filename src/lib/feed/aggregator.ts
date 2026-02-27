@@ -1,4 +1,13 @@
-import type { Category, FeedItem, FeedSource } from './types';
+import type { Category, ContentType, FeedItem, FeedSource } from './types';
+
+// Sources whose IDs indicate research papers
+const PAPER_SOURCE_IDS = new Set(['pwc-latest']);
+const ARXIV_PREFIX = /^arxiv-/;
+function getContentType(sourceType: string, sourceId: string): ContentType {
+  if (sourceType === 'github') return 'repo';
+  if (sourceType === 'pwc' || PAPER_SOURCE_IDS.has(sourceId) || ARXIV_PREFIX.test(sourceId)) return 'paper';
+  return 'story';
+}
 
 // ── Weighted AI keyword scoring ──────────────────────────────────────────────
 const AI_KEYWORDS_WEIGHTED: [string, number][] = [
@@ -184,6 +193,7 @@ async function fetchSource(source: FeedSource): Promise<FeedItem[]> {
           sourceName: source.name,
           sourceType: 'hn',
           sourceTier: tier,
+          contentType: 'story',
           ...cls,
           publishedAt: hit.created_at,
           summary: '',
@@ -216,6 +226,7 @@ async function fetchSource(source: FeedSource): Promise<FeedItem[]> {
           sourceName: source.name,
           sourceType: 'reddit',
           sourceTier: tier,
+          contentType: 'story',
           ...cls,
           publishedAt: new Date(p.created_utc * 1000).toISOString(),
           summary: p.selftext?.slice(0, 300) ?? '',
@@ -244,9 +255,10 @@ async function fetchSource(source: FeedSource): Promise<FeedItem[]> {
           sourceName: source.name,
           sourceType: 'rss',
           sourceTier: tier,
+          contentType: 'paper',
           ...cls,
           publishedAt: paper.published ? new Date(paper.published).toISOString() : new Date().toISOString(),
-          summary: (paper.abstract ?? '').slice(0, 300),
+          summary: (paper.abstract ?? '').slice(0, 500),
           tags: [],
           score: paper.total_stars,
           thumbnail: paper.thumbnail_url ?? undefined,
@@ -266,16 +278,19 @@ async function fetchSource(source: FeedSource): Promise<FeedItem[]> {
         const cls = classifyItem(text, source.defaultCategory, source.alwaysAiTagged);
         items.push({
           id: `github-${repo.id}`,
-          title: `${repo.full_name}${repo.description ? ` — ${repo.description}` : ''}`,
+          title: repo.full_name,
           url: repo.html_url,
           sourceId: source.id,
           sourceName: source.name,
           sourceType: 'github',
           sourceTier: tier,
+          contentType: 'repo',
           ...cls,
           publishedAt: repo.updated_at,
           summary: repo.description ?? '',
-          tags: repo.language ? [repo.language] : [],
+          tags: repo.topics ?? [],
+          repoLanguage: repo.language ?? undefined,
+          repoTopics: repo.topics ?? [],
           score: repo.stargazers_count,
         });
       }
@@ -297,6 +312,7 @@ async function fetchSource(source: FeedSource): Promise<FeedItem[]> {
           sourceName: source.name,
           sourceType: 'rss',
           sourceTier: tier,
+          contentType: getContentType('rss', source.id),
           ...cls,
           publishedAt: p.publishedAt,
           summary: p.summary,
