@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "build:cf": "opennextjs-cloudflare build && cp .open-next/worker.js .open-next/assets/_worker.js && cp -r .open-next/cloudflare .open-next/assets/ && cp -r .open-next/server-functions .open-next/assets/ && cp -r .open-next/middleware .open-next/assets/ && cp -r .open-next/.build .open-next/assets/ && node -e \"const r={version:1,include:['/*'],exclude:['/_next/static/*','/favicon.ico','/_next/image*']};require('fs').writeFileSync('.open-next/assets/_routes.json',JSON.stringify(r))\"",
+    "build:cf": "next build && mkdir -p .next/server/node_modules/styled-jsx && cp -r ../node_modules/styled-jsx/dist .next/server/node_modules/styled-jsx/dist 2>/dev/null; opennextjs-cloudflare build --skipNextBuild && cp .open-next/worker.js .open-next/assets/_worker.js && cp -r .open-next/cloudflare .open-next/assets/ && cp -r .open-next/server-functions .open-next/assets/ && cp -r .open-next/middleware .open-next/assets/ && cp -r .open-next/.build .open-next/assets/ && node -e \"const r={version:1,include:['/*'],exclude:['/_next/static/*','/favicon.ico','/_next/image*']};require('fs').writeFileSync('.open-next/assets/_routes.json',JSON.stringify(r))\"",
     "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets --project-name wokpost --branch main",
     "preview": "npm run build:cf && wrangler pages dev .open-next/assets",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
@@ -25,6 +25,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "styled-jsx": "^5.1.6",
     "tailwindcss": "^4.2.0",
     "typescript": "^5",
     "wrangler": "^4.67.0"
