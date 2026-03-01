@@ -56,7 +56,8 @@ export function SiteHeader() {
           <span className="site-logo-dot" aria-hidden="true" />
         </Link>
         <nav className="header-nav">
-          <Link href="/" className="nav-link">Feed</Link>
+          <Link href="/" className="nav-link">Home</Link>
+          <Link href="/#categories" className="nav-link" data-hide-mobile="">Categories</Link>
           <Link href="/newsletter" className="nav-link" data-hide-mobile="">Newsletter</Link>
           <a
             href="https://wokspec.org"
@@ -257,7 +258,7 @@ export function FeedCard({
             {item.sourceName}
           </span>
           <span style={{ color: 'var(--border-strong)' }}>·</span>
-          <span>{timeAgo(item.publishedAt)}</span>
+          <span><time dateTime={item.publishedAt}>{timeAgo(item.publishedAt)}</time></span>
           {readingTime && <span className="reading-time">{readingTime}m read</span>}
           {isRepo && item.repoLanguage && <span className="reading-time">{item.repoLanguage}</span>}
           {item.score !== undefined && !isRepo && (
@@ -283,10 +284,10 @@ export function NewsletterBar() {
               WokPost Digest
             </div>
             <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em' }}>
-              Stay in the loop
+              Workflow insights, delivered
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: 320 }}>
-              Two summaries a month, curated from verified sources. No spam.
+              Curated tips, tools, and tutorials for builders — twice a month, no spam.
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-start' }}>
@@ -312,7 +313,7 @@ export function SiteFooter() {
               WokPost
             </div>
             <p className="footer-brand-desc">
-              Open source, unbiased news. No algorithms deciding your feed. No sponsored content.
+              Workflow insights for builders. Curated tips, tools, and tutorials for indie developers, creators, and businesses.
             </p>
           </div>
           <div>

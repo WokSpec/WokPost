@@ -4,7 +4,10 @@ import { CATEGORIES } from '@/lib/feed/types';
 import type { FeedItem, ContentType, Category } from '@/lib/feed/types';
 import { CommentsSection } from '@/components/CommentsSection';
 import { NewsletterBar } from '@/components/FeedComponents';
+import { ReadingProgress } from '@/components/ReadingProgress';
+import { VoteButton } from '@/components/VoteButton';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import type { Metadata } from 'next';
 
 // Dynamic — item lookup depends on D1/KV at request time
@@ -70,6 +73,34 @@ async function resolveItem(decoded: string): Promise<FeedItem | undefined> {
   return items.find(i => i.id === decoded);
 }
 
+// ── Related stories ─────────────────────────────────────────────────────────
+async function getRelatedItems(category: Category, excludeId: string): Promise<FeedItem[]> {
+  // 1. Try D1 for recent same-category items
+  try {
+    // @ts-expect-error — Cloudflare D1 binding
+    const db = globalThis.__env__?.DB as import('@cloudflare/workers-types').D1Database | undefined;
+    if (db) {
+      const { results } = await db
+        .prepare(`SELECT * FROM feed_items WHERE category = ? AND id != ? ORDER BY published_at DESC LIMIT 6`)
+        .bind(category, excludeId)
+        .all();
+      if (results && results.length > 0) return results.map(r => rowToItem(r as Record<string, unknown>));
+    }
+  } catch { /* D1 unavailable */ }
+
+  // 2. Fallback: KV full feed
+  try {
+    // @ts-expect-error — Cloudflare KV binding
+    const kv = globalThis.__env__?.FEED_CACHE;
+    if (kv) {
+      const cached = await kv.get('feed:all', 'json') as FeedItem[] | null;
+      if (cached) return cached.filter(i => i.category === category && i.id !== excludeId).slice(0, 6);
+    }
+  } catch { /* KV unavailable */ }
+
+  return [];
+}
+
 // ── Favicon helper ──────────────────────────────────────────────────────────
 function Favicon({ url, size = 14 }: { url: string; size?: number }) {
   let domain = '';
@@ -98,6 +129,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const item = await resolveItem(decoded);
   if (!item) notFound();
 
+  const relatedItems = await getRelatedItems(item.category, decoded).catch(() => [] as FeedItem[]);
+
   const cat = CATEGORIES[item.category];
   const catColor = cat?.color ?? 'var(--accent)';
   const domain = (() => {
@@ -118,6 +151,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <>
+      <ReadingProgress />
+
       {/* Page header band */}
       <div style={{
         borderBottom: '1px solid var(--border)',
@@ -133,11 +168,15 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         />
         <div className="site-container" style={{ maxWidth: 820, position: 'relative' }}>
 
-          {/* Eyebrow row */}
+          {/* Back / Eyebrow row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-            <a href={`/${item.category}`} style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: catColor, fontFamily: 'var(--font-mono)' }}>
+            <Link
+              href={`/${item.category}`}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: catColor, fontFamily: 'var(--font-mono)' }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
               {cat?.label}
-            </a>
+            </Link>
             {item.sourceTier === 1 && <span className="tier1-badge">T1</span>}
             {isRepo && <span className="source-type-badge source-type-repo">Open Source Repo</span>}
             {isPaper && <span className="source-type-badge source-type-paper">Research Paper</span>}
@@ -259,8 +298,34 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               {ctaIcon}
               {ctaLabel}
             </a>
-            <a href={`/${item.category}`} className="btn btn-ghost" style={{ fontSize: '0.78rem' }}>
+            <Link href={`/${item.category}`} className="btn btn-ghost" style={{ fontSize: '0.78rem' }}>
               More {cat?.label}
+            </Link>
+            <VoteButton postId={item.id} />
+            {/* Social share */}
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(item.title)}&url=${encodeURIComponent(`https://wokpost.wokspec.org/post/${encodeURIComponent(item.id)}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost share-social-btn"
+              title="Share on X (Twitter)"
+              aria-label="Share on X"
+              style={{ fontSize: '0.78rem', padding: '0.55rem 0.875rem', gap: 6 }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              Tweet
+            </a>
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://wokpost.wokspec.org/post/${encodeURIComponent(item.id)}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost share-social-btn"
+              title="Share on LinkedIn"
+              aria-label="Share on LinkedIn"
+              style={{ fontSize: '0.78rem', padding: '0.55rem 0.875rem', gap: 6 }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              LinkedIn
             </a>
           </div>
 
@@ -295,9 +360,51 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* Comments */}
-      <div className="site-container" style={{ maxWidth: 820, paddingTop: 36, paddingBottom: 64 }}>
+      <div className="site-container" style={{ maxWidth: 820, paddingTop: 36, paddingBottom: 48 }}>
         <CommentsSection postId={item.id} />
       </div>
+
+      {/* Related stories */}
+      {relatedItems.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)', padding: '2.5rem 1.5rem' }}>
+          <div className="site-container" style={{ maxWidth: 820 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', color: 'var(--text-faint)' }}>
+                More in <span style={{ color: catColor }}>{cat?.label}</span>
+              </div>
+              <Link href={`/${item.category}`} style={{ fontSize: '0.72rem', color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
+                View all →
+              </Link>
+            </div>
+            <div className="related-grid">
+              {relatedItems.slice(0, 4).map(rel => {
+                const relCat = CATEGORIES[rel.category];
+                const relDomain = (() => { try { return new URL(rel.url).hostname.replace(/^www\./, ''); } catch { return rel.sourceName; } })();
+                return (
+                  <Link key={rel.id} href={`/post/${encodeURIComponent(rel.id)}`} className="related-card">
+                    {rel.thumbnail && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={rel.thumbnail} alt="" className="related-card-img" loading="lazy" />
+                    )}
+                    <div className="related-card-body">
+                      <div style={{ fontSize: '0.6rem', fontWeight: 700, color: relCat?.color ?? catColor, fontFamily: 'var(--font-mono)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 5 }}>
+                        {relCat?.label}
+                      </div>
+                      <div style={{ fontSize: '0.82rem', fontFamily: 'var(--font-heading)', fontWeight: 700, lineHeight: 1.4, color: 'var(--text)', marginBottom: 7 }}>
+                        {rel.title}
+                      </div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', display: 'flex', gap: 6 }}>
+                        <span>{relDomain}</span>
+                        {rel.aiTagged && <><span>·</span><span style={{ color: '#38bdf8' }}>AI {rel.aiScore}/10</span></>}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       <NewsletterBar />
     </>

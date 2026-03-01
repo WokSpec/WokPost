@@ -8,14 +8,14 @@ import { StockTicker } from '@/components/StockTicker';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'WokPost — Open Source Unbiased News',
-  description: 'Verified, unbiased news across 20 categories. No algorithms. No sponsored content.',
+  title: 'WokPost — Workflow insights for builders',
+  description: 'Curated workflow tips, tools, and tutorials for indie developers, creators, and businesses.',
   openGraph: {
     type: 'website',
     siteName: 'WokPost',
     url: 'https://wokpost.wokspec.org',
-    title: 'WokPost — Open Source Unbiased News',
-    description: 'Verified, unbiased news across 20 categories.',
+    title: 'WokPost — Workflow insights for builders',
+    description: 'Curated workflow tips, tools, and tutorials for indie developers, creators, and businesses.',
     images: [{ url: '/og.png' }],
   },
 };

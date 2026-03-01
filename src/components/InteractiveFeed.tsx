@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import type { FeedItem } from '@/lib/feed/types';
+import type { FeedItem, ContentType } from '@/lib/feed/types';
 import { FeedCard, IconRefresh, IconSearch, IconClose } from './FeedComponents';
 
 interface Props {
@@ -16,6 +16,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
   const [allItems, setAllItems] = useState<FeedItem[]>(initialItems);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'latest' | 'trending' | 'impact'>('latest');
+  const [typeFilter, setTypeFilter] = useState<ContentType | 'all'>('all');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialTotal > initialItems.length || initialItems.length >= 20);
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
   const [saveFeedLoading, setSaveFeedLoading] = useState(false);
   const [saveFeedMsg, setSaveFeedMsg] = useState('');
   const saveFeedRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Load bookmarks
   useEffect(() => {
@@ -79,6 +81,37 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
+  const loadMore = useCallback(async () => {
+    if (loading || !hasMore) return;
+    setLoading(true);
+    try {
+      const nextPage = page + 1;
+      const params = new URLSearchParams({ page: String(nextPage), sort, ...(category ? { category } : {}) });
+      const res = await fetch(`/api/feed?${params}`);
+      const data = await res.json() as { items: FeedItem[]; hasMore: boolean };
+      setAllItems(prev => {
+        const ids = new Set(prev.map(i => i.id));
+        return [...prev, ...data.items.filter(i => !ids.has(i.id))];
+      });
+      setPage(nextPage);
+      setHasMore(data.hasMore);
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, [loading, hasMore, page, sort, category]);
+
+  // Infinite scroll via IntersectionObserver
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting && !loading && hasMore && !showBookmarks && !search) {
+        loadMore();
+      }
+    }, { rootMargin: '200px' });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore, loading, hasMore, showBookmarks, search]);
+
   const toggleBookmark = useCallback((id: string) => {
     if (!session) {
       setBookmarks(prev => {
@@ -99,6 +132,7 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
   const displayItems = (() => {
     let result = allItems;
     if (showBookmarks) result = result.filter(i => bookmarks.has(i.id));
+    if (typeFilter !== 'all') result = result.filter(i => i.contentType === typeFilter);
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(i =>
@@ -116,24 +150,6 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
     }
     return result;
   })();
-
-  const loadMore = async () => {
-    if (loading || !hasMore) return;
-    setLoading(true);
-    try {
-      const nextPage = page + 1;
-      const params = new URLSearchParams({ page: String(nextPage), sort, ...(category ? { category } : {}) });
-      const res = await fetch(`/api/feed?${params}`);
-      const data = await res.json() as { items: FeedItem[]; hasMore: boolean };
-      setAllItems(prev => {
-        const ids = new Set(prev.map(i => i.id));
-        return [...prev, ...data.items.filter(i => !ids.has(i.id))];
-      });
-      setPage(nextPage);
-      setHasMore(data.hasMore);
-    } catch { /* ignore */ }
-    setLoading(false);
-  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -167,6 +183,11 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
       setTimeout(() => { setShowSaveFeed(false); setSaveFeedMsg(''); }, 1000);
     }
   };
+
+  // Content type counts
+  const storiesCount = allItems.filter(i => i.contentType === 'story').length;
+  const papersCount  = allItems.filter(i => i.contentType === 'paper').length;
+  const reposCount   = allItems.filter(i => i.contentType === 'repo').length;
 
   return (
     <div>
@@ -253,6 +274,27 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
         </button>
       </div>
 
+      {/* Content-type filter */}
+      {(papersCount > 0 || reposCount > 0) && (
+        <div className="type-filter">
+          {([
+            ['all',   'All',     allItems.length],
+            ['story', 'Stories', storiesCount],
+            ['paper', 'Papers',  papersCount],
+            ['repo',  'Repos',   reposCount],
+          ] as [ContentType | 'all', string, number][]).filter(([id, , count]) => id === 'all' || count > 0).map(([id, label, count]) => (
+            <button
+              key={id}
+              className={`type-pill${typeFilter === id ? ' active' : ''}`}
+              onClick={() => setTypeFilter(id)}
+            >
+              {label}
+              <span className="type-pill-count">{count}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Stats */}
       <div className="feed-stats">
         <span>
@@ -282,6 +324,11 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
               <div style={{ fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-heading)' }}>No results for &ldquo;{search}&rdquo;</div>
               <button className="clear-search-btn" onClick={() => setSearch('')}>Clear search</button>
             </>
+          ) : typeFilter !== 'all' ? (
+            <>
+              <div style={{ fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-heading)' }}>No {typeFilter}s in this feed</div>
+              <button className="clear-search-btn" onClick={() => setTypeFilter('all')}>Show all types</button>
+            </>
           ) : (
             'No stories yet. Check back soon.'
           )}
@@ -300,11 +347,23 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
         </div>
       )}
 
-      {/* Load more */}
-      {!showBookmarks && !search && hasMore && (
-        <button className="load-more-btn" onClick={loadMore} disabled={loading}>
-          {loading ? 'Loading...' : 'Load more stories'}
-        </button>
+      {/* Infinite scroll sentinel */}
+      {!showBookmarks && !search && (
+        <div ref={sentinelRef} style={{ height: 1 }} aria-hidden="true" />
+      )}
+
+      {/* Loading indicator */}
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '1.5rem 0', fontSize: '0.78rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
+          Loading more stories…
+        </div>
+      )}
+
+      {/* End of feed */}
+      {!hasMore && allItems.length > 0 && !showBookmarks && !search && (
+        <div style={{ textAlign: 'center', padding: '1.5rem 0', fontSize: '0.72rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', borderTop: '1px solid var(--border)', marginTop: 8 }}>
+          You&apos;ve reached the end · {allItems.length} stories
+        </div>
       )}
     </div>
   );

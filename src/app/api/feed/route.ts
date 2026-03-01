@@ -40,7 +40,8 @@ export async function GET(req: Request) {
   const q = searchParams.get('q')?.toLowerCase() ?? '';
   const sort = searchParams.get('sort') ?? 'latest';
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
-  const limit = 20;
+  const format = searchParams.get('format') ?? 'json';
+  const limit = format === 'rss' ? 50 : 20;
 
   // Try KV cache
   let items: FeedItem[] | undefined;
@@ -94,6 +95,47 @@ export async function GET(req: Request) {
   const total = filtered.length;
   const start = (page - 1) * limit;
   const paged = filtered.slice(start, start + limit);
+
+  // ── RSS output ──────────────────────────────────────────────────────────────
+  if (format === 'rss') {
+    const feedTitle = category
+      ? `WokPost — ${category.charAt(0).toUpperCase() + category.slice(1)}`
+      : 'WokPost — Workflow insights for builders';
+    const feedLink = 'https://wokpost.wokspec.org';
+    const feedDesc = 'Curated workflow tips, tools, and tutorials for indie developers, creators, and businesses.';
+    const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const items_xml = paged.map(item => `
+    <item>
+      <title>${escape(item.title)}</title>
+      <link>${escape(item.url)}</link>
+      <guid isPermaLink="false">${escape(item.id)}</guid>
+      <pubDate>${new Date(item.publishedAt).toUTCString()}</pubDate>
+      <category>${escape(item.category)}</category>
+      <source url="${escape(feedLink)}">${escape(item.sourceName)}</source>
+      ${item.summary ? `<description>${escape(item.summary.slice(0, 500))}</description>` : ''}
+      ${item.thumbnail ? `<enclosure url="${escape(item.thumbnail)}" type="image/jpeg" length="0"/>` : ''}
+    </item>`).join('');
+
+    const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>${escape(feedTitle)}</title>
+    <link>${escape(feedLink)}</link>
+    <description>${escape(feedDesc)}</description>
+    <language>en-us</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="${escape(feedLink)}/api/feed?format=rss${category ? `&amp;category=${category}` : ''}" rel="self" type="application/rss+xml"/>
+    ${items_xml}
+  </channel>
+</rss>`;
+
+    return new Response(rss, {
+      headers: {
+        'Content-Type': 'application/rss+xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=1800',
+      },
+    });
+  }
 
   return NextResponse.json({ items: paged, total, page, hasMore: start + limit < total });
 }
