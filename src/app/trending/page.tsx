@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: 'The top stories trending across all categories right now.',
 };
 
-export const revalidate = 900; // 15 min
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 async function getTrending(): Promise<FeedItem[]> {
   // Try KV cache first (same data the main feed uses)
@@ -109,9 +110,9 @@ export default async function TrendingPage() {
               <div style={{ display: 'grid', gridTemplateColumns: hero.thumbnail ? '1fr 380px' : '1fr', gap: 0 }}>
                 <div style={{ padding: '2rem 2.25rem' }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
-                    {hero.thumbnail && (
+                    {hero.thumbnail && (() => { try { return new URL(hero.url).hostname; } catch { return null; } })() && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`https://www.google.com/s2/favicons?domain=${new URL(hero.url).hostname}&sz=16`} alt="" width={14} height={14} style={{ borderRadius: 3, opacity: 0.8 }} />
+                      <img src={`https://www.google.com/s2/favicons?domain=${(() => { try { return new URL(hero.url).hostname; } catch { return ''; } })()}&sz=16`} alt="" width={14} height={14} style={{ borderRadius: 3, opacity: 0.8 }} />
                     )}
                     <span style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: CATEGORIES[hero.category as keyof typeof CATEGORIES]?.color ?? 'var(--accent)', fontFamily: 'var(--font-mono)' }}>
                       {CATEGORIES[hero.category as keyof typeof CATEGORIES]?.label ?? hero.category}
@@ -194,7 +195,7 @@ export default async function TrendingPage() {
               <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 2, fontFamily: 'var(--font-mono)', fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-faint)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.04em' }}>
                 #{i + 2}
               </div>
-              <FeedCard item={item} bookmarked={false} onBookmark={() => {}} />
+              <FeedCard item={item} bookmarked={false} />
             </div>
           ))}
         </div>
