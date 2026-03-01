@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
 
 function getDB() {
   try {
     // @ts-expect-error — Cloudflare D1 injected at runtime
     return globalThis.__env__?.DB as D1Database | undefined;
   } catch { return undefined; }
+}
+
+async function getSession(): Promise<Record<string, unknown> | null> {
+  try {
+    const { auth } = await import('@/auth');
+    return await auth();
+  } catch { return null; }
 }
 
 function nanoid() {
@@ -35,7 +41,7 @@ export async function GET(req: Request) {
   // Only call auth() when needed (author view)
   let isAuthor = false;
   if (authorOnly) {
-    const session = await auth().catch(() => null);
+    const session = await getSession();
     isAuthor = !!session?.user?.id;
   }
 
@@ -70,7 +76,7 @@ export async function GET(req: Request) {
 
 // POST /api/posts — create a new editorial post (author only)
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json() as {

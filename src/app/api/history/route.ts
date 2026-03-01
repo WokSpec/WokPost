@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+
+async function getSession(): Promise<Record<string, unknown> | null> {
+  try {
+    const { auth } = await import('@/auth');
+    return await getSession();
+  } catch { return null; }
+}
 
 function getDB() {
   // @ts-expect-error — Cloudflare D1 injected at runtime
@@ -12,7 +18,7 @@ function nanoid() {
 
 // GET /api/history — return last 50 read items for current user
 export async function GET() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = getDB();
@@ -28,7 +34,7 @@ export async function GET() {
 
 // POST /api/history — record a read event (upsert by user_id + item_id)
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json() as {
@@ -60,7 +66,7 @@ export async function POST(req: Request) {
 
 // DELETE /api/history — clear all history for current user
 export async function DELETE() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = getDB();

@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+
+async function getSession(): Promise<Record<string, unknown> | null> {
+  try {
+    const { auth } = await import('@/auth');
+    return await getSession();
+  } catch { return null; }
+}
 
 function getDB() {
   // @ts-expect-error — Cloudflare D1 injected at runtime
@@ -8,7 +14,7 @@ function getDB() {
 
 // GET /api/saved-feeds
 export async function GET() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = getDB();
@@ -24,7 +30,7 @@ export async function GET() {
 
 // POST /api/saved-feeds — create a saved feed
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json() as {
@@ -55,7 +61,7 @@ export async function POST(req: Request) {
 
 // DELETE /api/saved-feeds?id=xxx
 export async function DELETE(req: Request) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);

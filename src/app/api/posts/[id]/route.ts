@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
 
 function getDB() {
-  // @ts-expect-error — Cloudflare D1 injected at runtime
-  return globalThis.__env__?.DB as D1Database | undefined;
+  try {
+    // @ts-expect-error — Cloudflare D1 injected at runtime
+    return globalThis.__env__?.DB as D1Database | undefined;
+  } catch { return undefined; }
+}
+
+async function getSession(): Promise<Record<string, unknown> | null> {
+  try {
+    const { auth } = await import('@/auth');
+    return await auth();
+  } catch { return null; }
 }
 
 // GET /api/posts/[id] — get a single post by id or slug
@@ -18,7 +26,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   // In edit mode, bypass published filter but verify ownership
   if (editMode) {
-    const session = await auth();
+    const session = await getSession();
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const post = await db.prepare('SELECT * FROM editorial_posts WHERE id = ?1 OR slug = ?1').bind(id, id).first();
     if (!post) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -40,7 +48,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
 // PATCH /api/posts/[id] — update a post (author only)
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
@@ -78,7 +86,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 // DELETE /api/posts/[id] — delete a post (author only)
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
