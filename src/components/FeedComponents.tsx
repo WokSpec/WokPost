@@ -50,6 +50,7 @@ export const IconClose = () => (
 
 /* ── Header ─────────────────────────────────────────────────────────── */
 export function SiteHeader() {
+  const [mobileOpen, setMobileOpen] = useState(false);
   return (
     <header className="site-header">
       <div className="site-header-inner">
@@ -68,9 +69,32 @@ export function SiteHeader() {
           <Link href="/search" className="header-search-btn" aria-label="Search">
             <IconSearch />
           </Link>
+          <button
+            className="header-search-btn mobile-menu-btn"
+            aria-label="Open menu"
+            onClick={() => setMobileOpen(o => !o)}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              {mobileOpen
+                ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+                : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
+              }
+            </svg>
+          </button>
           <AuthButton />
         </div>
       </div>
+      {mobileOpen && (
+        <div className="mobile-menu" onClick={() => setMobileOpen(false)}>
+          <Link href="/" className="mobile-menu-link">Home</Link>
+          <Link href="/editorial" className="mobile-menu-link">Editorial</Link>
+          <Link href="/trending" className="mobile-menu-link">Trending</Link>
+          <Link href="/discover" className="mobile-menu-link">Discover</Link>
+          <Link href="/newsletter" className="mobile-menu-link">Newsletter</Link>
+          <Link href="/stats" className="mobile-menu-link">Stats</Link>
+          <Link href="/search" className="mobile-menu-link">Search</Link>
+        </div>
+      )}
     </header>
   );
 }
@@ -363,6 +387,7 @@ export function SiteFooter() {
             <Link href="/stats" className="footer-link">Stats</Link>
             <Link href="/newsletter" className="footer-link">Newsletter</Link>
             <Link href="/search" className="footer-link">Search</Link>
+            <Link href="/author/eral" className="footer-link">Author: Eral</Link>
             <Link href="/profile" className="footer-link">Profile</Link>
             <Link href="/profile#bookmarks" className="footer-link">Bookmarks</Link>
           </div>

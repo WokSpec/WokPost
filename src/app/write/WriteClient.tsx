@@ -164,6 +164,27 @@ export default function WriteClient({ author }: Props) {
               <div className="write-field">
                 <label>Tags (comma-separated)</label>
                 <input className="form-input" value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="ai, research, opinion" />
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
+                  {['AI', 'tech', 'culture', 'health', 'business', 'climate', 'science', 'policy', 'media', 'society', 'education', 'opinion'].map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      style={{
+                        fontSize: '0.62rem', padding: '2px 8px', cursor: 'pointer',
+                        background: 'var(--surface-raised)', border: '1px solid var(--border)',
+                        borderRadius: 4, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)',
+                      }}
+                      onClick={() => {
+                        const current = form.tags.split(',').map(t => t.trim()).filter(Boolean);
+                        if (!current.includes(tag.toLowerCase())) {
+                          setForm(f => ({ ...f, tags: [...current, tag.toLowerCase()].join(', ') }));
+                        }
+                      }}
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="write-field">
                 <label>Excerpt (shown in cards)</label>
@@ -229,7 +250,15 @@ export default function WriteClient({ author }: Props) {
                 className="write-body-input"
                 value={form.content}
                 onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                placeholder={`Write your post here. HTML is supported.\n\nTips:\n• Use the toolbar above for quick formatting\n• Use <h2> for section headings\n• Use <p> for paragraphs\n• Use <blockquote> for quotes`}
+                placeholder={`Write your post here. HTML is supported.\n\nTips:\n• Use the toolbar above for quick formatting\n• Ctrl/Cmd+B = Bold, Ctrl/Cmd+I = Italic, Ctrl/Cmd+K = Link\n• Use <h2> for section headings, <p> for paragraphs`}
+                onKeyDown={e => {
+                  if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+                    if (e.key === 'b') { e.preventDefault(); insertHtml('<strong>', '</strong>'); }
+                    if (e.key === 'i') { e.preventDefault(); insertHtml('<em>', '</em>'); }
+                    if (e.key === 'k') { e.preventDefault(); insertHtml('<a href="URL">', '</a>'); }
+                    if (e.key === 's') { e.preventDefault(); save(false); }
+                  }
+                }}
               />
               <div style={{ fontSize: '0.7rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', padding: '0.5rem 0', textAlign: 'right' }}>
                 {form.content.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(form.content.replace(/<[^>]+>/g, '').split(/\s+/).length / 200))} min read · By {author}

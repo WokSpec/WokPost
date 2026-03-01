@@ -365,8 +365,12 @@ export async function fetchAllSources(sources: FeedSource[]): Promise<FeedItem[]
         if (!item.summary || item.summary.length < 20) {
           if (item.contentType === 'repo' && item.tags?.length) {
             item.summary = `A ${item.repoLanguage ?? 'software'} project: ${item.tags.slice(0, 5).join(' · ')}`;
+          } else if (item.contentType === 'repo') {
+            item.summary = `${item.repoLanguage ?? 'Open-source'} project on GitHub — ${item.title}`;
           } else if (item.contentType === 'paper') {
             item.summary = `Research paper in ${item.category}.`;
+          } else if (item.sourceName?.toLowerCase().startsWith('r/')) {
+            item.summary = `Discussion on ${item.sourceName}: ${item.title.slice(0, 120)}`;
           } else {
             item.summary = `${item.sourceName} — ${item.title.slice(0, 120)}`;
           }

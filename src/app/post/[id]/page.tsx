@@ -163,6 +163,21 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         itemThumbnail={item.thumbnail}
       />
 
+      {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'NewsArticle',
+          headline: item.title,
+          description: item.summary,
+          url: item.url,
+          datePublished: item.publishedAt,
+          publisher: { '@type': 'Organization', name: item.sourceName },
+          image: item.thumbnail,
+        }) }}
+      />
+
       {/* Page header band */}
       <div style={{
         borderBottom: '1px solid var(--border)',

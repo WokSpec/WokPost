@@ -76,6 +76,23 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
     <>
       <ReadingProgress />
 
+      {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: post.title,
+          description: post.excerpt,
+          author: { '@type': 'Person', name: post.author_name, url: `https://wokpost.wokspec.org/author/${post.author_name.toLowerCase()}` },
+          publisher: { '@type': 'Organization', name: 'WokPost', url: 'https://wokpost.wokspec.org' },
+          datePublished: post.created_at,
+          image: post.cover_image ?? `https://wokpost.wokspec.org/api/og?title=${encodeURIComponent(post.title)}&category=${encodeURIComponent(post.category)}`,
+          url: `https://wokpost.wokspec.org/editorial/${post.slug}`,
+          keywords: tags.join(', '),
+        }) }}
+      />
+
       {/* Hero */}
       {post.cover_image && (
         <div style={{ width: '100%', maxHeight: 480, overflow: 'hidden', position: 'relative' }}>

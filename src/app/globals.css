@@ -1907,3 +1907,30 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading); }
   border-color: var(--border-strong) !important;
   background: var(--surface-raised) !important;
 }
+
+/* ── Mobile menu ──────────────────────────────────────────────────── */
+.mobile-menu-btn { display: none; }
+@media (max-width: 640px) {
+  .mobile-menu-btn { display: flex; }
+}
+.mobile-menu {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0;
+}
+.mobile-menu-link {
+  display: block;
+  padding: 0.75rem 1.25rem;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.1s;
+}
+.mobile-menu-link:hover { background: var(--surface-inset); }
+@media (min-width: 641px) {
+  .mobile-menu { display: none !important; }
+}
