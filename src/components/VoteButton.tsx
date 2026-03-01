@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from './ToastProvider';
 
 export function VoteButton({ postId }: { postId: string }) {
   const [count, setCount] = useState(0);
   const [voted, setVoted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetch(`/api/votes?post_id=${encodeURIComponent(postId)}`)
@@ -27,7 +29,10 @@ export function VoteButton({ postId }: { postId: string }) {
         body: JSON.stringify({ post_id: postId }),
       });
       const d = await res.json() as { ok: boolean; voted: boolean; count: number };
-      if (d.ok) { setVoted(d.voted); setCount(d.count); }
+      if (d.ok) {
+        setVoted(d.voted); setCount(d.count);
+        toast(d.voted ? 'Upvoted!' : 'Vote removed', d.voted ? 'success' : 'info');
+      }
     } catch {
       // Revert on error
       setVoted(v => !v);

@@ -101,6 +101,24 @@ function normalizeTitle(title: string): string {
     .slice(0, 80);
 }
 
+// ── Summary cleaner ──────────────────────────────────────────────────────────
+function cleanSummary(raw: string): string {
+  return raw
+    // Remove residual HTML tags (should be gone via extractText but guard again)
+    .replace(/<[^>]+>/g, ' ')
+    // Collapse whitespace
+    .replace(/\s+/g, ' ')
+    // Strip common RSS boilerplate suffixes
+    .replace(/\s*(read more|continue reading|read the full (story|article|post)|full story|more…|…more|\[…\]|\[\.{3}\]|click here to read more)[.…]*$/gi, '')
+    // Strip leading date/source prefixes like "TechCrunch — "
+    .replace(/^[A-Z][a-zA-Z ]+ [—–-] /, '')
+    .trim()
+    // Enforce max length — 320 chars gives enough context
+    .slice(0, 320)
+    // If we cut in the middle of a word, trim back to last space
+    .replace(/\s\S*$/, '');
+}
+
 // ── RSS / Atom parser ────────────────────────────────────────────────────────
 function extractText(xml: string, tag: string): string {
   const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
@@ -156,7 +174,7 @@ function parseRssItems(xml: string): { title: string; url: string; publishedAt: 
         title,
         url: link,
         publishedAt: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
-        summary: desc.slice(0, 300),
+        summary: cleanSummary(desc),
         thumbnail,
       });
     }

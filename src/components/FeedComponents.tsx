@@ -8,6 +8,7 @@ import { CATEGORIES } from '@/lib/feed/types';
 import type { FeedItem } from '@/lib/feed/types';
 import { NewsletterFormInline } from './NewsletterForm';
 import { AuthButton } from './AuthButton';
+import { useToast } from './ToastProvider';
 
 /* ── SVG Icons ──────────────────────────────────────────────────────── */
 export const IconBookmark = ({ filled }: { filled?: boolean }) => (
@@ -110,6 +111,7 @@ export function FeedCard({
 }) {
   const { data: session } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [imgFailed, setImgFailed] = useState(false);
   const [bookmarked, setBookmarked] = useState(!!initialBookmarked);
   const [saving, setSaving] = useState(false);
@@ -146,7 +148,7 @@ export function FeedCard({
     setSaving(true);
     if (bookmarked) {
       const res = await fetch(`/api/bookmarks?item_id=${encodeURIComponent(item.id)}`, { method: 'DELETE' });
-      if (res.ok) { setBookmarked(false); onBookmark?.(item.id); }
+      if (res.ok) { setBookmarked(false); onBookmark?.(item.id); toast('Bookmark removed', 'info'); }
     } else {
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
@@ -158,7 +160,7 @@ export function FeedCard({
           item_ai_score: item.aiScore, item_ai_tagged: item.aiTagged,
         }),
       });
-      if (res.ok) { setBookmarked(true); onBookmark?.(item.id); }
+      if (res.ok) { setBookmarked(true); onBookmark?.(item.id); toast('Bookmarked!'); }
     }
     setSaving(false);
   };
@@ -170,6 +172,7 @@ export function FeedCard({
         await navigator.share({ title: item.title, url: item.url });
       } else {
         await navigator.clipboard.writeText(item.url);
+        toast('Link copied!');
         setShared(true);
         setTimeout(() => setShared(false), 2000);
       }

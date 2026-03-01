@@ -7,14 +7,28 @@ function getDB() {
 }
 
 // GET /api/posts/[id] — get a single post by id or slug
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+// Add ?edit=1 to bypass published filter (author only)
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
+  const url = new URL(req.url);
+  const editMode = url.searchParams.get('edit') === '1';
+
+  // In edit mode, bypass published filter but verify ownership
+  if (editMode) {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const post = await db.prepare('SELECT * FROM editorial_posts WHERE id = ?1 OR slug = ?1').bind(id, id).first();
+    if (!post) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (post.author_id !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return NextResponse.json({ post });
+  }
+
   const post = await db.prepare(
     'SELECT * FROM editorial_posts WHERE (id = ?1 OR slug = ?1) AND published = 1'
-  ).bind(id).first();
+  ).bind(id, id).first();
 
   if (!post) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 

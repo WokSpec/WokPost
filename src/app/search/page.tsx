@@ -3,7 +3,22 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { FeedCard } from '@/components/FeedComponents';
-import type { FeedItem } from '@/lib/feed/types';
+import { CATEGORIES } from '@/lib/feed/types';
+import type { FeedItem, Category } from '@/lib/feed/types';
+
+interface SearchResult {
+  id: string;
+  title: string;
+  url: string;
+  source_name: string;
+  category: string;
+  summary: string | null;
+  thumbnail: string | null;
+  published_at: string;
+  score: number | null;
+  result_type: 'story' | 'editorial';
+  slug: string | null;
+}
 
 function SearchResults() {
   const searchParams = useSearchParams();
@@ -24,12 +39,30 @@ function SearchResults() {
 
     setLoading(true);
     setSearched(true);
-    fetch(`/api/feed?q=${encodeURIComponent(q)}&sort=latest&page=1`)
+    fetch(`/api/search?q=${encodeURIComponent(q)}&limit=40`)
       .then(r => r.json())
       .then((data: unknown) => {
-        const d = data as { items?: FeedItem[]; total?: number };
-        setItems(d.items ?? []);
-        setTotal(d.total ?? d.items?.length ?? 0);
+        const d = data as { results?: SearchResult[]; total?: number };
+        const mapped: FeedItem[] = (d.results ?? []).map(r => ({
+          id: r.id,
+          title: r.title,
+          url: r.result_type === 'editorial' ? `/editorial/${r.slug ?? r.id}` : r.url,
+          sourceId: r.source_name,
+          sourceName: r.source_name,
+          sourceType: r.result_type === 'editorial' ? 'editorial' : 'rss',
+          sourceTier: 1,
+          contentType: (r.result_type === 'editorial' ? 'editorial' : 'story') as FeedItem['contentType'],
+          category: (Object.keys(CATEGORIES).includes(r.category) ? r.category : 'ai') as Category,
+          aiTagged: false,
+          aiScore: r.score ?? 5,
+          publishedAt: r.published_at,
+          summary: r.summary ?? '',
+          tags: [],
+          thumbnail: r.thumbnail ?? undefined,
+          editorialSlug: r.result_type === 'editorial' ? (r.slug ?? r.id) : undefined,
+        }));
+        setItems(mapped);
+        setTotal(mapped.length);
       })
       .catch(() => {})
       .finally(() => setLoading(false));

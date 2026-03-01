@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { CATEGORIES } from '@/lib/feed/types';
 
 interface Props { author: string; authorId: string; }
@@ -37,6 +37,24 @@ export default function WriteClient({ author }: Props) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [view, setView] = useState<'list' | 'edit' | 'preview'>('list');
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  // Insert HTML snippet at cursor in body textarea
+  const insertHtml = useCallback((before: string, after = '') => {
+    const ta = bodyRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = ta.value.slice(start, end);
+    const replacement = before + (selected || 'text') + after;
+    const newVal = ta.value.slice(0, start) + replacement + ta.value.slice(end);
+    setForm(f => ({ ...f, content: newVal }));
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.selectionStart = start + before.length;
+      ta.selectionEnd = start + before.length + (selected || 'text').length;
+    });
+  }, []);
 
   const loadPosts = useCallback(async () => {
     const res = await fetch('/api/posts?author=1&limit=50');
@@ -77,7 +95,7 @@ export default function WriteClient({ author }: Props) {
   };
 
   const editPost = async (id: string) => {
-    const res = await fetch(`/api/posts/${id}`);
+    const res = await fetch(`/api/posts/${id}?edit=1`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = await res.json() as { post: any };
     const p = data.post;
@@ -176,11 +194,39 @@ export default function WriteClient({ author }: Props) {
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                 placeholder="Post title…"
               />
+              {/* Formatting toolbar */}
+              <div className="write-toolbar">
+                {[
+                  { label: 'B', title: 'Bold', before: '<strong>', after: '</strong>' },
+                  { label: 'I', title: 'Italic', before: '<em>', after: '</em>' },
+                  { label: 'H2', title: 'Heading 2', before: '<h2>', after: '</h2>' },
+                  { label: 'H3', title: 'Heading 3', before: '<h3>', after: '</h3>' },
+                  { label: '¶', title: 'Paragraph', before: '<p>', after: '</p>' },
+                  { label: '"', title: 'Blockquote', before: '<blockquote>', after: '</blockquote>' },
+                  { label: '<>', title: 'Inline code', before: '<code>', after: '</code>' },
+                  { label: '[ ]', title: 'Code block', before: '<pre><code>', after: '</code></pre>' },
+                  { label: '—', title: 'Divider', before: '<hr />', after: '' },
+                  { label: '🔗', title: 'Link', before: '<a href="URL">', after: '</a>' },
+                  { label: '🖼', title: 'Image', before: '<img src="URL" alt="', after: '" style="max-width:100%;border-radius:8px" />' },
+                  { label: 'UL', title: 'Bullet list', before: '<ul>\n  <li>', after: '</li>\n</ul>' },
+                ].map(({ label, title, before, after }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="toolbar-btn"
+                    title={title}
+                    onMouseDown={e => { e.preventDefault(); insertHtml(before, after); }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <textarea
+                ref={bodyRef}
                 className="write-body-input"
                 value={form.content}
                 onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                placeholder={`Write your post here. HTML is supported.\n\nTips:\n• Use <h2> for section headings\n• Use <p> for paragraphs\n• Use <img src="…" alt="…"> for images\n• Use <blockquote> for quotes\n• Use <code> for inline code\n• Use <pre><code>…</code></pre> for code blocks`}
+                placeholder={`Write your post here. HTML is supported.\n\nTips:\n• Use the toolbar above for quick formatting\n• Use <h2> for section headings\n• Use <p> for paragraphs\n• Use <blockquote> for quotes`}
               />
               <div style={{ fontSize: '0.7rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', padding: '0.5rem 0', textAlign: 'right' }}>
                 {form.content.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length} words · ~{Math.max(1, Math.ceil(form.content.replace(/<[^>]+>/g, '').split(/\s+/).length / 200))} min read · By {author}

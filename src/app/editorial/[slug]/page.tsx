@@ -124,9 +124,14 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
         {tags.length > 0 && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
             {tags.map(t => (
-              <span key={t} style={{ padding: '4px 12px', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 20, fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              <Link
+                key={t}
+                href={`/search?q=${encodeURIComponent(t)}`}
+                style={{ padding: '4px 12px', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 20, fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textDecoration: 'none', transition: 'border-color 0.15s, color 0.15s' }}
+                className="tag-link"
+              >
                 #{t}
-              </span>
+              </Link>
             ))}
           </div>
         )}

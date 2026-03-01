@@ -352,10 +352,18 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
         <div ref={sentinelRef} style={{ height: 1 }} aria-hidden="true" />
       )}
 
-      {/* Loading indicator */}
+      {/* Skeleton loading cards */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '1.5rem 0', fontSize: '0.78rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
-          Loading more stories…
+        <div style={{ display: 'contents' }}>
+          {[1,2,3].map(i => (
+            <div key={i} className="skeleton-card">
+              <div className="skeleton skeleton-image" />
+              <div className="skeleton skeleton-title" />
+              <div className="skeleton skeleton-line" />
+              <div className="skeleton skeleton-line short" />
+              <div className="skeleton skeleton-meta" />
+            </div>
+          ))}
         </div>
       )}
 
