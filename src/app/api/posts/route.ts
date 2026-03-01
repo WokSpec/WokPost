@@ -27,17 +27,21 @@ export async function GET(req: Request) {
   const offset = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10));
   const authorOnly = searchParams.get('author') === '1';
 
-  const session = await auth().catch(() => null);
-  const isAuthor = !!session?.user?.id;
-
   const db = getDB();
   if (!db) return NextResponse.json({ posts: [], total: 0 });
+
+  // Only call auth() when needed (author view)
+  let isAuthor = false;
+  if (authorOnly) {
+    const session = await auth().catch(() => null);
+    isAuthor = !!session?.user?.id;
+  }
 
   let query = `SELECT id, slug, title, excerpt, cover_image, category, tags, author_name, author_avatar, published, featured, views, created_at, updated_at
                FROM editorial_posts WHERE 1=1`;
   const binds: (string | number)[] = [];
 
-  if (!isAuthor || !authorOnly) {
+  if (!isAuthor) {
     query += ' AND published = 1';
   }
   if (category) {
@@ -51,7 +55,7 @@ export async function GET(req: Request) {
 
   // Total count
   let countQuery = 'SELECT COUNT(*) as cnt FROM editorial_posts WHERE 1=1';
-  if (!isAuthor || !authorOnly) countQuery += ' AND published = 1';
+  if (!isAuthor) countQuery += ' AND published = 1';
   if (category) countQuery += ' AND category = ?1';
   const countRow = await db.prepare(countQuery).bind(...(category ? [category] : [])).first();
 
