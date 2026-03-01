@@ -177,7 +177,7 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.7, margin: '0 0 10px' }}>
                   Eral writes long-form analysis on technology, science, business, and culture. A recovering academic covering the ideas that matter most and the ones we should be paying more attention to.
                 </p>
-                <Link href="/editorial" style={{ fontSize: '0.72rem', color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-mono)' }}>
+                <Link href={`/author/${post.author_name.toLowerCase()}`} style={{ fontSize: '0.72rem', color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-mono)' }}>
                   All posts by {post.author_name} →
                 </Link>
               </div>

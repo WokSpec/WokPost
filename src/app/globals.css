@@ -1901,3 +1901,9 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading); }
   border-color: var(--border-strong) !important;
   box-shadow: 0 4px 24px rgba(0,0,0,0.18);
 }
+
+/* ── Author page ──────────────────────────────────────── */
+.author-post-card:hover {
+  border-color: var(--border-strong) !important;
+  background: var(--surface-raised) !important;
+}

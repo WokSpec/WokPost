@@ -86,9 +86,9 @@ export async function GET(req: Request) {
       ).all();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const editItems: FeedItem[] = (editPosts as any[]).map(p => ({
-        id: `editorial-${p.id}`,
+        id: `editorial-${p.slug}`,
         title: p.title,
-        url: `/editorial/${p.slug}`,
+        url: `https://wokpost.wokspec.org/editorial/${p.slug}`,
         sourceId: 'wokpost-editorial',
         sourceName: p.author_name,
         sourceType: 'editorial' as const,
@@ -141,17 +141,20 @@ export async function GET(req: Request) {
     const feedLink = 'https://wokpost.wokspec.org';
     const feedDesc = 'Curated workflow tips, tools, and tutorials for indie developers, creators, and businesses.';
     const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const items_xml = paged.map(item => `
+    const items_xml = paged.map(item => {
+      const itemUrl = item.url.startsWith('http') ? item.url : `${feedLink}${item.url}`;
+      return `
     <item>
       <title>${escape(item.title)}</title>
-      <link>${escape(item.url)}</link>
+      <link>${escape(itemUrl)}</link>
       <guid isPermaLink="false">${escape(item.id)}</guid>
       <pubDate>${new Date(item.publishedAt).toUTCString()}</pubDate>
       <category>${escape(item.category)}</category>
       <source url="${escape(feedLink)}">${escape(item.sourceName)}</source>
       ${item.summary ? `<description>${escape(item.summary.slice(0, 500))}</description>` : ''}
       ${item.thumbnail ? `<enclosure url="${escape(item.thumbnail)}" type="image/jpeg" length="0"/>` : ''}
-    </item>`).join('');
+    </item>`;
+    }).join('');
 
     const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
