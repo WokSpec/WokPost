@@ -117,10 +117,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const description = item.contentType === 'repo'
     ? (item.summary || `Open source repository: ${item.title}`)
     : item.summary?.slice(0, 160) || undefined;
+  const ogUrl = `https://wokpost.wokspec.org/api/og?title=${encodeURIComponent(item.title)}&category=${encodeURIComponent(item.category)}&source=${encodeURIComponent(item.sourceName)}${item.score ? `&score=${item.score}` : ''}`;
   return {
     title: `${item.title} — WokPost`,
     description,
-    openGraph: item.thumbnail ? { images: [{ url: item.thumbnail }] } : undefined,
+    openGraph: {
+      title: item.title,
+      description: description ?? undefined,
+      images: [{ url: ogUrl, width: 1200, height: 630, alt: item.title }],
+    },
+    twitter: { card: 'summary_large_image', images: [ogUrl] },
   };
 }
 

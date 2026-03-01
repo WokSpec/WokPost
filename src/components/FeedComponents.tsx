@@ -267,6 +267,9 @@ export function FeedCard({
           {isRepo && item.score !== undefined && (
             <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{item.score.toLocaleString()} stars</span></>
           )}
+          {item.commentCount !== undefined && item.commentCount > 0 && (
+            <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{item.commentCount} comments</span></>
+          )}
         </div>
       </div>
     </div>
