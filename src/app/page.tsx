@@ -26,12 +26,52 @@ export default async function HomePage() {
   let items: Awaited<ReturnType<typeof fetchAllSources>> = [];
   try { items = await fetchAllSources(FEED_SOURCES.slice(0, 40)); } catch { /* build-time */ }
 
-  const featured = items[0];
+  // Inject editorial posts from D1 if available
+  try {
+    const { getDB } = await import('@/lib/cloudflare');
+    const db = await getDB();
+    if (db) {
+      const { results: editPosts } = await db.prepare(
+        'SELECT * FROM editorial_posts WHERE published = 1 ORDER BY featured DESC, created_at DESC LIMIT 10'
+      ).all() as { results: Record<string, unknown>[] };
+      const editorialItems = editPosts.map(ep => ({
+        id: String(ep.id),
+        title: String(ep.title),
+        url: `/editorial/${ep.slug}`,
+        sourceId: 'wokpost-editorial',
+        sourceName: 'WokPost',
+        sourceType: 'editorial' as const,
+        sourceTier: 1 as const,
+        contentType: 'editorial' as const,
+        category: String(ep.category ?? 'ai'),
+        aiTagged: false,
+        aiScore: 8,
+        publishedAt: String(ep.created_at ?? new Date().toISOString()),
+        summary: String(ep.excerpt ?? ''),
+        tags: [],
+        thumbnail: ep.cover_image ? String(ep.cover_image) : undefined,
+        score: undefined,
+        commentCount: undefined,
+        authorName: String(ep.author_name ?? ''),
+        authorAvatar: ep.author_avatar ? String(ep.author_avatar) : undefined,
+        editorialSlug: String(ep.slug),
+      }));
+      // Prepend editorial posts so they appear first in the feed
+      items = [...editorialItems, ...items];
+    }
+  } catch { /* no D1 at build time */ }
+
+  // Prefer editorial or high-scoring non-repo items as hero
+  const heroCandidate = items.find(i => i.contentType === 'editorial') 
+    ?? items.find(i => i.contentType === 'story' && (i.aiScore ?? 0) >= 7)
+    ?? items[0];
+  const featured = heroCandidate;
   const trending = [...items]
+    .filter(i => i.contentType !== 'editorial')
     .sort((a, b) => ((b.score ?? 0) + (b.commentCount ?? 0)) - ((a.score ?? 0) + (a.commentCount ?? 0)))
     .slice(0, 6);
   const topAI = items.filter(i => i.aiTagged).slice(0, 6);
-  const feedItems = items.slice(1, 61);
+  const feedItems = items.filter(i => i.id !== featured?.id).slice(0, 60);
 
   return (
     <>
@@ -44,7 +84,9 @@ export default async function HomePage() {
       {/* Featured hero */}
       {featured && (
         <Link
-          href={`/post/${encodeURIComponent(featured.id)}`}
+          href={featured.contentType === 'editorial' && featured.editorialSlug
+            ? `/editorial/${featured.editorialSlug}`
+            : `/post/${encodeURIComponent(featured.id)}`}
           className="featured-hero"
           style={featured.thumbnail ? { backgroundImage: `url(${featured.thumbnail})` } : {}}
         >
