@@ -78,6 +78,11 @@ export default async function HomePage() {
     .slice(0, 6);
   const topAI = items.filter(i => i.aiTagged).slice(0, 6);
   const feedItems = items.filter(i => i.id !== featured?.id).slice(0, 60);
+  const mostDiscussed = [...items]
+    .filter(i => (i.commentCount ?? 0) > 0 || (i.score ?? 0) > 100)
+    .sort((a, b) => (b.commentCount ?? 0) - (a.commentCount ?? 0))
+    .slice(0, 5);
+  const editorialItems = items.filter(i => i.contentType === 'editorial').slice(0, 6);
 
   // Category counts for the strip
   const catCounts: Record<string, number> = {};
@@ -126,6 +131,42 @@ export default async function HomePage() {
             </div>
           </div>
         </Link>
+      )}
+
+      {/* Editorial Spotlight Strip */}
+      {editorialItems.length > 0 && (
+        <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+          <div className="site-container" style={{ paddingTop: 20, paddingBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <IcoPen size={13} />
+                <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', color: 'var(--text-faint)' }}>From the Editor</span>
+              </div>
+              <Link href="/editorial" style={{ fontSize: '0.68rem', color: 'var(--accent)', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>All posts →</Link>
+            </div>
+            <div className="editorial-strip">
+              {editorialItems.map(ep => {
+                const cat = CATEGORIES[ep.category as keyof typeof CATEGORIES];
+                return (
+                  <Link key={ep.id} href={`/editorial/${ep.editorialSlug}`} className="editorial-strip-card">
+                    {ep.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={ep.thumbnail} alt="" className="editorial-strip-thumb" />
+                    ) : (
+                      <div className="editorial-strip-thumb editorial-strip-thumb-placeholder" style={{ background: `${cat?.color ?? '#818cf8'}18`, color: cat?.color ?? '#818cf8' }}>
+                        {(() => { const Icon = CATEGORY_ICONS[ep.category]; return Icon ? <Icon size={18} /> : <IcoPen size={16} />; })()}
+                      </div>
+                    )}
+                    <div className="editorial-strip-body">
+                      <span className="editorial-strip-cat" style={{ color: cat?.color }}>{cat?.label ?? ep.category}</span>
+                      <div className="editorial-strip-title">{ep.title}</div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Main layout */}
@@ -185,22 +226,48 @@ export default async function HomePage() {
               </div>
             )}
 
+            {/* Most Discussed */}
+            {mostDiscussed.length > 0 && (
+              <div className="sidebar-widget">
+                <div className="section-title" style={{ marginBottom: 12 }}>Most Discussed</div>
+                {mostDiscussed.map(item => {
+                  const cat = CATEGORIES[item.category as keyof typeof CATEGORIES];
+                  return (
+                    <Link key={item.id} href={`/post/${encodeURIComponent(item.id)}`} className="sidebar-story">
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 700, color: cat?.color, marginBottom: 2, letterSpacing: '0.07em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>{cat?.label}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text)', lineHeight: 1.45, fontFamily: 'var(--font-heading)', fontWeight: 600 }}>{item.title}</div>
+                        {(item.commentCount ?? 0) > 0 && (
+                          <div style={{ fontSize: '0.62rem', color: 'var(--text-faint)', marginTop: 3, fontFamily: 'var(--font-mono)' }}>
+                            {item.commentCount} comments · {item.sourceName}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Browse Topics */}
             <div className="sidebar-widget">
               <div className="section-title" style={{ marginBottom: 12 }}>Browse Topics</div>
-              {Object.entries(CATEGORIES).map(([id, cat]) => (
-                <a key={id} href={`/${id}`} className="sidebar-cat-link">
-                  <span style={{ color: cat.color, fontWeight: 600, fontSize: '0.78rem', fontFamily: 'var(--font-heading)' }}>
-                    {cat.label}
-                  </span>
-                  <span style={{ fontSize: '0.62rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
-                    {items.filter(i => i.category === id).length}
-                  </span>
-                </a>
-              ))}
+              {Object.entries(CATEGORIES).map(([id, cat]) => {
+                const Icon = CATEGORY_ICONS[id];
+                return (
+                  <a key={id} href={`/${id}`} className="sidebar-cat-link">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: cat.color, fontWeight: 600, fontSize: '0.78rem', fontFamily: 'var(--font-heading)' }}>
+                      {Icon && <Icon size={12} />}{cat.label}
+                    </span>
+                    <span style={{ fontSize: '0.62rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
+                      {items.filter(i => i.category === id).length}
+                    </span>
+                  </a>
+                );
+              })}
             </div>
 
-            {/* From the Editor */}
+            {/* From the Editor — sidebar */}
             {editorialSidebar.length > 0 && (
               <div className="sidebar-widget">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>

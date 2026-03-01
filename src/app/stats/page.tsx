@@ -8,45 +8,83 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Stats — WokPost',
-  description: 'Real-time stats on WokPost content, sources, categories, and editorial coverage.',
+  description: 'Real-time stats on WokPost content, sources, categories, editorial coverage, and Eral analytics.',
 };
 
 interface CategoryStat { category: string; count: number; avg_score: number; }
 interface SourceStat { source_name: string; count: number; source_tier: string; }
 interface DayStat { day: string; count: number; }
-interface EditorialStat { category: string; count: number; total_views: number; }
+interface EditorialStat { category: string; count: number; total_views: number; avg_rating: number | null; }
+interface SignalStat { type: string; count: number; }
 
 export default async function StatsPage() {
   let totalFeedItems = 0;
   let totalEditorial = 0;
   let totalComments = 0;
   let totalVotes = 0;
+  let totalRatings = 0;
+  let avgRatingGlobal = 0;
+  let totalViews = 0;
   let categoryCounts: CategoryStat[] = [];
   let topSources: SourceStat[] = [];
   let recentDays: DayStat[] = [];
   let editorialStats: EditorialStat[] = [];
+  let topSignals: SignalStat[] = [];
+  let eralPostsWithSignals = 0;
+  let eralSourcesCited = 0;
 
   try {
     const db = await (async () => { try { const { getDB } = await import('@/lib/cloudflare'); return await getDB(); } catch { return undefined; } })();
     if (db) {
-      const [feedCount, editCount, commentCount, voteCount, catRows, srcRows, dayRows, editRows] = await Promise.all([
+      const [feedCount, editCount, commentCount, voteCount, catRows, srcRows, dayRows, editRows, ratingRow, viewsRow] = await Promise.all([
         db.prepare('SELECT COUNT(*) as c FROM feed_items').first<{ c: number }>(),
         db.prepare('SELECT COUNT(*) as c FROM editorial_posts WHERE published=1').first<{ c: number }>(),
         db.prepare('SELECT COUNT(*) as c FROM comments').first<{ c: number }>().catch(() => null),
         db.prepare('SELECT COUNT(*) as c FROM votes').first<{ c: number }>().catch(() => null),
         db.prepare('SELECT category, COUNT(*) as count, AVG(ai_score) as avg_score FROM feed_items GROUP BY category ORDER BY count DESC LIMIT 20').all<CategoryStat>(),
-        db.prepare('SELECT source_name, COUNT(*) as count, source_tier FROM feed_items GROUP BY source_name ORDER BY count DESC LIMIT 10').all<SourceStat>(),
+        db.prepare('SELECT source_name, COUNT(*) as count, source_tier FROM feed_items GROUP BY source_name ORDER BY count DESC LIMIT 15').all<SourceStat>(),
         db.prepare("SELECT date(fetched_at) as day, COUNT(*) as count FROM feed_items WHERE fetched_at > datetime('now', '-14 days') GROUP BY day ORDER BY day ASC").all<DayStat>(),
-        db.prepare('SELECT category, COUNT(*) as count, SUM(views) as total_views FROM editorial_posts WHERE published=1 GROUP BY category ORDER BY count DESC').all<EditorialStat>(),
+        db.prepare(`SELECT ep.category, COUNT(*) as count, SUM(ep.views) as total_views,
+                    AVG(r.rating) as avg_rating
+                    FROM editorial_posts ep
+                    LEFT JOIN post_ratings r ON r.post_id = ep.id
+                    WHERE ep.published=1 GROUP BY ep.category ORDER BY count DESC`).all<EditorialStat>().catch(() =>
+          db.prepare('SELECT category, COUNT(*) as count, SUM(views) as total_views, NULL as avg_rating FROM editorial_posts WHERE published=1 GROUP BY category ORDER BY count DESC').all<EditorialStat>()
+        ),
+        db.prepare('SELECT AVG(rating) as avg, COUNT(*) as cnt FROM post_ratings').first<{ avg: number | null; cnt: number }>().catch(() => null),
+        db.prepare('SELECT SUM(views) as total FROM editorial_posts WHERE published=1').first<{ total: number }>().catch(() => null),
       ]);
       totalFeedItems = feedCount?.c ?? 0;
       totalEditorial = editCount?.c ?? 0;
       totalComments = commentCount?.c ?? 0;
       totalVotes = voteCount?.c ?? 0;
+      totalRatings = ratingRow?.cnt ?? 0;
+      avgRatingGlobal = ratingRow?.avg ? Math.round(ratingRow.avg * 10) / 10 : 0;
+      totalViews = viewsRow?.total ?? 0;
       categoryCounts = catRows.results;
       topSources = srcRows.results;
       recentDays = dayRows.results;
       editorialStats = editRows.results;
+
+      // Eral signal analytics
+      try {
+        const sigPosts = await db.prepare(`SELECT signals, sources_cited FROM editorial_posts WHERE published=1 AND signals != '[]' AND signals != ''`).all<{ signals: string; sources_cited: string }>();
+        eralPostsWithSignals = sigPosts.results.length;
+        const sigTypeCounts: Record<string, number> = {};
+        let totalSources = 0;
+        for (const p of sigPosts.results) {
+          try {
+            const sigs = JSON.parse(p.signals) as { type: string; label: string }[];
+            for (const s of sigs) sigTypeCounts[s.type] = (sigTypeCounts[s.type] ?? 0) + 1;
+          } catch { /* */ }
+          try {
+            const srcs = JSON.parse(p.sources_cited) as unknown[];
+            totalSources += srcs.length;
+          } catch { /* */ }
+        }
+        topSignals = Object.entries(sigTypeCounts).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count);
+        eralSourcesCited = totalSources;
+      } catch { /* */ }
     }
   } catch { /* no D1 */ }
 
@@ -69,17 +107,20 @@ export default async function StatsPage() {
       </div>
 
       {/* Top-level metrics */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
         {[
           { label: 'Feed Items', value: totalFeedItems.toLocaleString(), icon: <IcoNewspaper size={18} />, color: '#6366f1' },
-          { label: 'Editorial Posts', value: totalEditorial.toString(), icon: <IcoPen size={18} />, color: '#a855f7' },
+          { label: 'Editorial Analyses', value: totalEditorial.toString(), icon: <IcoPen size={18} />, color: '#a855f7' },
+          { label: 'Total Reads', value: totalViews.toLocaleString(), icon: <IcoNewspaper size={18} />, color: '#818cf8' },
+          { label: 'Ratings Cast', value: totalRatings.toLocaleString(), icon: <IcoThumbUp size={18} />, color: '#f59e0b' },
+          { label: 'Avg Rating', value: avgRatingGlobal > 0 ? `${avgRatingGlobal}/5` : '—', icon: <IcoThumbUp size={18} />, color: '#f59e0b' },
           { label: 'Comments', value: totalComments.toLocaleString(), icon: <IcoChat size={18} />, color: '#22d3ee' },
           { label: 'Votes Cast', value: totalVotes.toLocaleString(), icon: <IcoThumbUp size={18} />, color: '#10b981' },
           { label: 'Categories', value: categoryCounts.length.toString(), icon: <IcoTag size={18} />, color: '#f59e0b' },
-          { label: 'Sources', value: topSources.length + '+', icon: <IcoGlobe size={18} />, color: '#f43f5e' },
+          { label: 'Sources Tracked', value: topSources.length + '+', icon: <IcoGlobe size={18} />, color: '#f43f5e' },
         ].map(m => (
           <div key={m.label} style={{ padding: '1.25rem', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 12 }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{m.icon}</div>
+            <div style={{ fontSize: '1.5rem', marginBottom: 8, color: m.color }}>{m.icon}</div>
             <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', fontWeight: 900, letterSpacing: '-0.04em', color: m.color, lineHeight: 1 }}>
               {m.value}
             </div>
@@ -88,6 +129,47 @@ export default async function StatsPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Eral Analytics Block */}
+      <div style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #6366f108, #a855f708)', border: '1px solid #6366f133', borderRadius: 14, marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.25rem' }}>
+          <span className="eral-ai-badge">
+            <span className="eral-pulse" />
+            Eral Intelligence
+          </span>
+          <span style={{ fontSize: '0.62rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>AI editorial analytics</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+          {[
+            { val: totalEditorial.toString(), lbl: 'Analyses published' },
+            { val: eralPostsWithSignals.toString(), lbl: 'With signal data' },
+            { val: eralSourcesCited.toString(), lbl: 'Sources cited total' },
+            { val: eralPostsWithSignals > 0 ? Math.round(eralSourcesCited / eralPostsWithSignals).toString() : '—', lbl: 'Avg sources / post' },
+          ].map(({ val, lbl }) => (
+            <div key={lbl} style={{ padding: '0.875rem', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 10 }}>
+              <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, color: '#818cf8', letterSpacing: '-0.04em' }}>{val}</div>
+              <div style={{ fontSize: '0.62rem', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-faint)', marginTop: 2 }}>{lbl}</div>
+            </div>
+          ))}
+        </div>
+        {topSignals.length > 0 && (
+          <div>
+            <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', marginBottom: 8 }}>
+              Signal type distribution
+            </div>
+            <div className="eral-signal-bar">
+              {topSignals.map(s => (
+                <span key={s.type} className={`eral-signal-chip sig-${s.type}`}>
+                  {s.type} · {s.count}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        <Link href="/author/eral" style={{ display: 'inline-block', marginTop: '1rem', fontSize: '0.72rem', color: '#818cf8', fontFamily: 'var(--font-mono)', textDecoration: 'none' }}>
+          View Eral profile →
+        </Link>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
@@ -198,6 +280,7 @@ export default async function StatsPage() {
                   </div>
                   <div style={{ fontSize: '0.62rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
                     {(e.total_views ?? 0).toLocaleString()} views
+                    {e.avg_rating ? <div style={{ fontSize: "0.6rem", color: "#f59e0b", fontFamily: "var(--font-mono)", marginTop: 2 }}>★ {Math.round(e.avg_rating * 10) / 10} avg</div> : null}
                   </div>
                 </Link>
               );

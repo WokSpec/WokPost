@@ -16,6 +16,10 @@ interface EditPost {
   tags: string;
   published: boolean;
   featured: boolean;
+  trigger_reason: string;
+  methodology: string;
+  sources_cited: string; // JSON array as textarea
+  signals: string; // comma-separated labels
   slug?: string;
   views?: number;
   created_at?: string;
@@ -24,6 +28,7 @@ interface EditPost {
 const BLANK: EditPost = {
   title: '', content: '', excerpt: '', cover_image: '',
   category: 'ai', tags: '', published: false, featured: false,
+  trigger_reason: '', methodology: '', sources_cited: '', signals: '',
 };
 
 interface PostSummary {
@@ -68,10 +73,31 @@ export default function WriteClient({ author }: Props) {
 
   const save = async (publish?: boolean) => {
     setSaving(true); setMsg('');
+    // Parse signals: "label:type, label2:type2" → [{label, type}]
+    const signalsParsed = form.signals
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(s => {
+        const idx = s.lastIndexOf(':');
+        if (idx > 0) return { label: s.slice(0, idx).trim(), type: s.slice(idx + 1).trim() };
+        return { label: s, type: 'trending' };
+      });
+    // Parse sources_cited: one per line, "name | url | note"
+    const sourcesParsed = form.sources_cited
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(s => {
+        const parts = s.split('|').map(p => p.trim());
+        return { name: parts[0] ?? '', url: parts[1] || undefined, note: parts[2] || undefined };
+      });
     const payload = {
       ...form,
       tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
       published: publish ?? form.published,
+      signals: signalsParsed,
+      sources_cited: sourcesParsed,
     };
     try {
       if (form.id) {
@@ -105,6 +131,22 @@ export default function WriteClient({ author }: Props) {
       excerpt: p.excerpt, cover_image: p.cover_image ?? '',
       category: p.category, tags: Array.isArray(JSON.parse(p.tags || '[]')) ? JSON.parse(p.tags || '[]').join(', ') : '',
       published: p.published === 1, featured: p.featured === 1,
+      trigger_reason: p.trigger_reason ?? '',
+      methodology: p.methodology ?? '',
+      sources_cited: (() => {
+        try {
+          const arr = JSON.parse(p.sources_cited || '[]');
+          return arr.map((s: { name: string; url?: string; note?: string }) =>
+            [s.name, s.url, s.note].filter(Boolean).join(' | ')
+          ).join('\n');
+        } catch { return ''; }
+      })(),
+      signals: (() => {
+        try {
+          const arr = JSON.parse(p.signals || '[]');
+          return arr.map((s: { label: string; type: string }) => `${s.label}:${s.type}`).join(', ');
+        } catch { return ''; }
+      })(),
       views: p.views, created_at: p.created_at,
     });
     setView('edit');
@@ -203,6 +245,30 @@ export default function WriteClient({ author }: Props) {
                   <input type="checkbox" checked={form.featured} onChange={e => setForm(f => ({ ...f, featured: e.target.checked }))} />
                   Featured (pinned to top)
                 </label>
+              </div>
+
+              {/* Eral AI metadata fields */}
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#818cf8', fontFamily: 'var(--font-mono)', marginBottom: 10 }}>
+                  Eral metadata
+                </div>
+                <div className="write-field">
+                  <label>Why Eral wrote this</label>
+                  <textarea className="form-input" rows={2} value={form.trigger_reason} onChange={e => setForm(f => ({ ...f, trigger_reason: e.target.value }))} placeholder="Coverage of X spiked 3x in 12 hours across 7 sources…" style={{ resize: 'vertical', fontSize: '0.78rem' }} />
+                </div>
+                <div className="write-field">
+                  <label>Methodology</label>
+                  <textarea className="form-input" rows={2} value={form.methodology} onChange={e => setForm(f => ({ ...f, methodology: e.target.value }))} placeholder="Analyzed 14 sources, cross-referenced claims…" style={{ resize: 'vertical', fontSize: '0.78rem' }} />
+                </div>
+                <div className="write-field">
+                  <label>Signals (label:type, …)</label>
+                  <input className="form-input" value={form.signals} onChange={e => setForm(f => ({ ...f, signals: e.target.value }))} placeholder="Coverage spike:spike, Trending topic:trending" style={{ fontSize: '0.78rem' }} />
+                  <div style={{ fontSize: '0.62rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', marginTop: 3 }}>Types: trending, spike, pattern, editorial, source</div>
+                </div>
+                <div className="write-field">
+                  <label>Sources cited (one per line: name | url | note)</label>
+                  <textarea className="form-input" rows={4} value={form.sources_cited} onChange={e => setForm(f => ({ ...f, sources_cited: e.target.value }))} placeholder={'Reuters | https://reuters.com | Breaking coverage\nNature | https://nature.com | Research data'} style={{ resize: 'vertical', fontSize: '0.72rem', fontFamily: 'var(--font-mono)' }} />
+                </div>
               </div>
               {form.id && (
                 <button className="btn btn-ghost" style={{ fontSize: '0.75rem', color: 'var(--error, #ef4444)', borderColor: 'var(--error, #ef4444)44', marginTop: '0.5rem' }} onClick={() => del(form.id!)}>

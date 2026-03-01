@@ -27,6 +27,7 @@ type EditorialPost = {
   views: number;
   reading_time: number | null;
   created_at: string;
+  signals: string | null;
 };
 
 function readMins(post: EditorialPost) {
@@ -173,13 +174,13 @@ export default async function EditorialIndex() {
           </div>
           <div style={{ flex: 1, minWidth: 260 }}>
             <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>
-              About the editor
+              AI Editorial Intelligence
             </div>
             <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.03em', marginBottom: 10 }}>
               Eral
             </div>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.75, marginBottom: '1.25rem', maxWidth: 560 }}>
-              Eral writes about technology, science, business, and culture from the premise that most things are more complicated than we pretend. A recovering academic with opinions about AI interpretability, urban policy, and the video game as art form. Based somewhere with good Wi-Fi.
+              Eral is WokPost's AI editorial system. It monitors hundreds of live sources, detects when coverage of a topic is accelerating, and writes long-form analysis grounded in what the data actually shows — with full source attribution and signal transparency.
             </p>
             <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
               <div style={{ fontFamily: 'var(--font-mono)' }}>
@@ -271,6 +272,19 @@ function EditorialCard({ post, large = false }: { post: EditorialPost; large?: b
             ))}
           </div>
         )}
+
+        {/* Signals */}
+        {(() => {
+          const sigs: { label: string; type: string }[] = post.signals ? (() => { try { return JSON.parse(post.signals); } catch { return []; } })() : [];
+          if (!sigs.length) return null;
+          return (
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {sigs.slice(0, 2).map((s, i) => (
+                <span key={i} className={`eral-signal-chip sig-${s.type}`} style={{ fontSize: '0.55rem', padding: '1px 7px' }}>{s.label}</span>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Footer meta */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, paddingTop: 10, borderTop: '1px solid var(--border)' }}>

@@ -18,6 +18,10 @@ async function getTrending(): Promise<FeedItem[]> {
   try {
     const kv = await (async () => { try { const { getKV } = await import('@/lib/cloudflare'); return await getKV(); } catch { return undefined; } })();
     if (kv) {
+      // Try new feed2: key format first (stale-while-revalidate format)
+      const entry = await kv.get('feed2:all', 'json') as { items: FeedItem[]; fetchedAt: number } | null;
+      if (entry?.items && entry.items.length > 0) return entry.items;
+      // Fall back to old key format
       const cached = await kv.get('feed:all', 'json') as FeedItem[] | null;
       if (cached && cached.length > 0) return cached;
     }

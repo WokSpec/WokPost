@@ -187,8 +187,30 @@ function urlId(url: string): string {
   try { return new URL(url).pathname; } catch { return url; }
 }
 
+// ── Circuit-breaker state (in-process, resets per isolate lifetime) ──────────
+const _failCounts = new Map<string, { count: number; openUntil: number }>();
+function isCircuitOpen(id: string): boolean {
+  const s = _failCounts.get(id);
+  if (!s) return false;
+  if (s.openUntil > Date.now()) return true;
+  // Reset after cooldown
+  _failCounts.delete(id);
+  return false;
+}
+function recordFailure(id: string) {
+  const s = _failCounts.get(id) ?? { count: 0, openUntil: 0 };
+  s.count += 1;
+  // Open circuit after 3 consecutive failures for 5 minutes
+  if (s.count >= 3) s.openUntil = Date.now() + 5 * 60 * 1000;
+  _failCounts.set(id, s);
+}
+function recordSuccess(id: string) {
+  _failCounts.delete(id);
+}
+
 // ── Fetcher ──────────────────────────────────────────────────────────────────
 async function fetchSource(source: FeedSource): Promise<FeedItem[]> {
+  if (isCircuitOpen(source.id)) return [];
   const headers = { 'User-Agent': 'WokPost/1.0 (+https://wokpost.wokspec.org)' };
   const tier = source.tier ?? 3;
   const items: FeedItem[] = [];
@@ -340,15 +362,27 @@ async function fetchSource(source: FeedSource): Promise<FeedItem[]> {
       }
     }
   } catch {
-    // Source temporarily unavailable — skip silently
+    // Source temporarily unavailable — trip circuit breaker
+    recordFailure(source.id);
+    return [];
   }
 
+  recordSuccess(source.id);
   return items;
 }
 
 // ── Main aggregator ──────────────────────────────────────────────────────────
+// Hard ceiling: 14s total. Slower sources contribute what they have; the rest
+// are abandoned. Cloudflare Worker CPU limit is 50ms (subrequest time doesn't
+// count), but wall-clock timeout matters for response latency.
+const AGGREGATE_TIMEOUT_MS = 14_000;
+
 export async function fetchAllSources(sources: FeedSource[]): Promise<FeedItem[]> {
-  const results = await Promise.allSettled(sources.map(s => fetchSource(s)));
+  const timeout = new Promise<null>(resolve => setTimeout(resolve, AGGREGATE_TIMEOUT_MS, null));
+  const fetches = Promise.allSettled(sources.map(s => fetchSource(s)));
+  const race = await Promise.race([fetches, timeout]);
+  // If timed out, race === null; fall through with empty settled list
+  const results = race ?? [];
   const all: FeedItem[] = [];
   const seenUrls = new Set<string>();
   const seenTitles = new Set<string>();

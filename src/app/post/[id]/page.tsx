@@ -59,6 +59,13 @@ async function resolveItem(decoded: string): Promise<FeedItem | undefined> {
   try {
     const kv = await (async () => { try { const { getKV } = await import('@/lib/cloudflare'); return await getKV(); } catch { return undefined; } })();
     if (kv) {
+      // Try new feed2: format first
+      const entry = await kv.get('feed2:all', 'json') as { items: FeedItem[]; fetchedAt: number } | null;
+      if (entry?.items) {
+        const found = entry.items.find(i => i.id === decoded);
+        if (found) return found;
+      }
+      // Fall back to old key
       const cached = await kv.get('feed:all', 'json') as FeedItem[] | null;
       if (cached) {
         const found = cached.find(i => i.id === decoded);

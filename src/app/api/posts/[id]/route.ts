@@ -56,14 +56,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (existing.author_id !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const body = await req.json() as Record<string, unknown>;
-  const allowed = ['title', 'content', 'excerpt', 'cover_image', 'category', 'tags', 'published', 'featured'];
+  const allowed = ['title', 'content', 'excerpt', 'cover_image', 'category', 'tags', 'published', 'featured',
+    'trigger_reason', 'methodology', 'signals', 'sources_cited', 'reading_time'];
   const updates: string[] = [];
   const binds: (string | number | null)[] = [];
 
   for (const key of allowed) {
     if (key in body) {
       updates.push(`${key} = ?${binds.length + 1}`);
-      if (key === 'tags') binds.push(JSON.stringify(body[key]));
+      if (key === 'tags' || key === 'signals' || key === 'sources_cited') binds.push(JSON.stringify(body[key]));
       else if (key === 'published' || key === 'featured') binds.push(body[key] ? 1 : 0);
       else binds.push(body[key] as string | null);
     }

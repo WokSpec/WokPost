@@ -4,6 +4,13 @@ import { fetchAllSources } from '@/lib/feed/aggregator';
 import type { Category, FeedItem } from '@/lib/feed/types';
 import { getDB, getKV } from '@/lib/cloudflare';
 
+// ── Cache config ─────────────────────────────────────────────────────────────
+const CACHE_SOFT_TTL_S = 900;   // 15 min — serve stale after this, trigger background refresh
+const CACHE_HARD_TTL_S = 1800;  // 30 min — KV hard expiry (fallback stale window)
+const LOCK_TTL_S = 60;           // 60s refresh lock (prevents thundering herd)
+
+interface CacheEntry { items: FeedItem[]; fetchedAt: number }
+
 // ── Upsert fetched items into D1 for persistent /post/[id] lookup ────────────
 async function persistItems(items: FeedItem[]) {
   try {
@@ -31,7 +38,35 @@ async function persistItems(items: FeedItem[]) {
       );
       await db.batch(stmts);
     }
-  } catch { /* D1 unavailable or batch error — non-blocking */ }
+  } catch (err) {
+    console.error('[feed] persistItems failed:', err);
+  }
+}
+
+// ── Background cache refresh (stale-while-revalidate) ────────────────────────
+async function refreshCache(cacheKey: string, sources: typeof FEED_SOURCES) {
+  const kv = await getKV();
+  if (!kv) return;
+
+  // Set a lock to prevent concurrent refreshes
+  const lockKey = `lock:${cacheKey}`;
+  const existingLock = await kv.get(lockKey);
+  if (existingLock) return; // another worker is already refreshing
+
+  await kv.put(lockKey, '1', { expirationTtl: LOCK_TTL_S });
+
+  try {
+    const items = await fetchAllSources(sources);
+    if (items.length > 0) {
+      const entry: CacheEntry = { items, fetchedAt: Date.now() };
+      await kv.put(cacheKey, JSON.stringify(entry), { expirationTtl: CACHE_HARD_TTL_S });
+      persistItems(items); // fire-and-forget
+    }
+  } catch (err) {
+    console.error('[feed] refreshCache failed:', err);
+  } finally {
+    await kv.delete(lockKey);
+  }
 }
 
 export async function GET(req: Request) {
@@ -43,37 +78,55 @@ export async function GET(req: Request) {
   const format = searchParams.get('format') ?? 'json';
   const limit = format === 'rss' ? 50 : 20;
 
-  // Try KV cache
+  const cacheKey = `feed2:${category ?? 'all'}`;
+
+  // ── KV cache with stale-while-revalidate ────────────────────────────────────
   let items: FeedItem[] | undefined;
-  let cacheHit = false;
+  let cacheStatus: 'HIT' | 'STALE' | 'MISS' = 'MISS';
+  let isStale = false;
+
   try {
     const kv = await getKV();
-    const cacheKey = `feed:${category ?? 'all'}`;
     if (kv) {
-      const cached = await kv.get(cacheKey, 'json') as FeedItem[] | null;
-      if (cached) { items = cached; cacheHit = true; }
+      const raw = await kv.get(cacheKey, 'json') as CacheEntry | null;
+      if (raw?.items?.length) {
+        items = raw.items;
+        const ageS = (Date.now() - raw.fetchedAt) / 1000;
+        if (ageS > CACHE_SOFT_TTL_S) {
+          cacheStatus = 'STALE';
+          isStale = true;
+        } else {
+          cacheStatus = 'HIT';
+        }
+      }
     }
   } catch { /* no KV in local dev */ }
 
-  if (!items) {
-    const sources = category
-      ? FEED_SOURCES.filter(s => s.defaultCategory === category)
-      : FEED_SOURCES;
-    items = await fetchAllSources(sources);
-
-    // Write to KV (30 min)
-    try {
-      const kv = await getKV();
-      if (kv) await kv.put(`feed:${category ?? 'all'}`, JSON.stringify(items), { expirationTtl: 1800 });
-    } catch { /* no KV in local dev */ }
+  // Trigger background refresh when stale (stale-while-revalidate)
+  if (isStale) {
+    const sources = category ? FEED_SOURCES.filter(s => s.defaultCategory === category) : FEED_SOURCES;
+    // Don't await — background refresh
+    refreshCache(cacheKey, sources).catch(() => {});
   }
 
-  // Persist fresh items to D1 for permanent /post/[id] lookups (only on cache miss)
-  if (!cacheHit && items.length > 0) {
+  if (!items) {
+    // Cold cache miss — fetch synchronously
+    const sources = category ? FEED_SOURCES.filter(s => s.defaultCategory === category) : FEED_SOURCES;
+    items = await fetchAllSources(sources);
+
+    // Write to KV
+    try {
+      const kv = await getKV();
+      if (kv) {
+        const entry: CacheEntry = { items, fetchedAt: Date.now() };
+        await kv.put(cacheKey, JSON.stringify(entry), { expirationTtl: CACHE_HARD_TTL_S });
+      }
+    } catch { /* no KV in local dev */ }
+
     persistItems(items); // fire-and-forget
   }
 
-  // Inject editorial posts from D1 (always fresh, not cached)
+  // ── Inject editorial posts from D1 (always fresh) ──────────────────────────
   try {
     const db = await getDB();
     if (db) {
@@ -177,5 +230,16 @@ export async function GET(req: Request) {
     });
   }
 
-  return NextResponse.json({ items: paged, total, page, hasMore: start + limit < total });
+  return NextResponse.json(
+    { items: paged, total, page, hasMore: start + limit < total },
+    {
+      headers: {
+        'X-Cache': cacheStatus,
+        // Edge CDN: serve for 5 min, allow stale for 10 more while revalidating
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Vary': 'Accept-Encoding',
+      },
+    }
+  );
 }
+

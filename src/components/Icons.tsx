@@ -253,6 +253,10 @@ export const IcoTrendingUp = mkIcon(<>
 </>);
 
 /* Map category ID → icon component */
+export const IcoBookmark = mkIcon(
+  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+);
+
 export const CATEGORY_ICONS: Record<string, React.ComponentType<IconProps>> = {
   ai:            IcoAI,
   business:      IcoBusiness,

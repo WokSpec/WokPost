@@ -93,6 +93,11 @@ export async function POST(req: Request) {
     tags?: string[];
     published?: boolean;
     featured?: boolean;
+    reading_time?: number;
+    signals?: { label: string; type: string }[];
+    sources_cited?: { name: string; url?: string; note?: string }[];
+    trigger_reason?: string;
+    methodology?: string;
   };
 
   if (!body.title?.trim() || !body.content?.trim()) {
@@ -105,13 +110,16 @@ export async function POST(req: Request) {
   const id = nanoid();
   const slug = slugify(body.title);
   const excerpt = body.excerpt?.slice(0, 300) || body.content.replace(/<[^>]+>/g, '').slice(0, 200);
+  const wordCount = body.content.replace(/<[^>]+>/g, '').split(/\s+/).length;
+  const readingTime = body.reading_time ?? Math.max(1, Math.ceil(wordCount / 200));
   const now = new Date().toISOString();
 
   await db.prepare(`
     INSERT INTO editorial_posts
       (id, slug, title, excerpt, content, cover_image, category, tags,
-       author_id, author_name, author_avatar, published, featured, created_at, updated_at)
-    VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?14)
+       author_id, author_name, author_avatar, published, featured, reading_time,
+       signals, sources_cited, trigger_reason, methodology, created_at, updated_at)
+    VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)
   `).bind(
     id, slug, body.title.trim(), excerpt, body.content,
     body.cover_image ?? null,
@@ -122,8 +130,16 @@ export async function POST(req: Request) {
     session.user.image ?? null,
     body.published ? 1 : 0,
     body.featured ? 1 : 0,
+    readingTime,
+    JSON.stringify(body.signals ?? []),
+    JSON.stringify(body.sources_cited ?? []),
+    body.trigger_reason ?? '',
+    body.methodology ?? '',
     now,
   ).run();
+
+  // Rebuild FTS index for new post (fire-and-forget)
+  db.prepare(`INSERT INTO editorial_fts(editorial_fts) VALUES('rebuild')`).run().catch(() => {});
 
   return NextResponse.json({ ok: true, id, slug });
 }

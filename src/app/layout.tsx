@@ -51,12 +51,17 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', site: '@wokspec' },
   icons: { icon: '/favicon.ico' },
+  manifest: '/manifest.webmanifest',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   return (
     <html lang="en">
+      <head>
+        {/* Prevent flash of wrong theme */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('wokpost-theme');if(!t&&window.matchMedia('(prefers-color-scheme: light)').matches)t='light';if(t==='light')document.documentElement.setAttribute('data-theme','light');}())` }} />
+      </head>
       <body className={`${spaceGrotesk.variable} ${dmSans.variable} ${dmMono.variable}`}>
         <SessionProvider session={session}>
           <ToastProvider>

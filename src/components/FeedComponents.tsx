@@ -11,6 +11,7 @@ import { AuthButton } from './AuthButton';
 import { useToast } from './ToastProvider';
 import { VoteButton } from './VoteButton';
 import { CATEGORY_ICONS, IcoChevronLeft, IcoChevronRight } from './Icons';
+import { ThemeToggle } from './ThemeToggle';
 
 /* ── SVG Icons ──────────────────────────────────────────────────────── */
 export const IconBookmark = ({ filled }: { filled?: boolean }) => (
@@ -70,6 +71,7 @@ export function SiteHeader() {
           <Link href="/search" className="header-search-btn" aria-label="Search">
             <IconSearch />
           </Link>
+          <ThemeToggle />
           <button
             className="header-search-btn mobile-menu-btn"
             aria-label="Open menu"
@@ -91,6 +93,7 @@ export function SiteHeader() {
           <Link href="/editorial" className="mobile-menu-link">Editorial</Link>
           <Link href="/trending" className="mobile-menu-link">Trending</Link>
           <Link href="/discover" className="mobile-menu-link">Discover</Link>
+          <Link href="/bookmarks" className="mobile-menu-link">Bookmarks</Link>
           <Link href="/newsletter" className="mobile-menu-link">Newsletter</Link>
           <Link href="/stats" className="mobile-menu-link">Stats</Link>
           <Link href="/search" className="mobile-menu-link">Search</Link>
@@ -458,7 +461,7 @@ export function SiteFooter() {
             <Link href="/search" className="footer-link">Search</Link>
             <Link href="/author/eral" className="footer-link">Author: Eral</Link>
             <Link href="/profile" className="footer-link">Profile</Link>
-            <Link href="/profile#bookmarks" className="footer-link">Bookmarks</Link>
+            <Link href="/bookmarks" className="footer-link">Bookmarks</Link>
           </div>
           <div>
             <div className="footer-col-title">Project</div>
