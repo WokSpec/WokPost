@@ -16,18 +16,24 @@ type SavedFeedRow = {
   id: string; name: string; category: string | null; keywords: string | null;
   sort: string; created_at: string;
 };
+type HistoryRow = {
+  id: string; item_id: string; item_title: string; item_url: string;
+  item_category: string | null; item_thumbnail: string | null; read_at: string;
+};
 
 async function getUserData(userId: string) {
   // @ts-expect-error — Cloudflare D1 injected at runtime
   const db = globalThis.__env__?.DB as D1Database | undefined;
-  if (!db) return { bookmarks: [], savedFeeds: [] };
-  const [bm, sf] = await Promise.all([
+  if (!db) return { bookmarks: [], savedFeeds: [], history: [] };
+  const [bm, sf, hist] = await Promise.all([
     db.prepare(`SELECT * FROM bookmarks WHERE user_id = ?1 ORDER BY bookmarked_at DESC`).bind(userId).all(),
     db.prepare(`SELECT * FROM saved_feeds WHERE user_id = ?1 ORDER BY created_at DESC`).bind(userId).all(),
+    db.prepare(`SELECT * FROM read_history WHERE user_id = ?1 ORDER BY read_at DESC LIMIT 30`).bind(userId).all().catch(() => ({ results: [] })),
   ]);
   return {
     bookmarks: (bm.results ?? []) as BookmarkRow[],
     savedFeeds: (sf.results ?? []) as SavedFeedRow[],
+    history: (hist.results ?? []) as HistoryRow[],
   };
 }
 
@@ -35,7 +41,7 @@ export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
-  const { bookmarks, savedFeeds } = await getUserData(session.user.id);
+  const { bookmarks, savedFeeds, history } = await getUserData(session.user.id);
   const user = session.user;
 
   const categories = Object.fromEntries(
@@ -77,6 +83,7 @@ export default async function ProfilePage() {
       <ProfileClient
         initialBookmarks={bookmarks}
         initialSavedFeeds={savedFeeds}
+        initialHistory={history}
         categories={categories}
       />
     </div>

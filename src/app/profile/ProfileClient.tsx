@@ -13,19 +13,26 @@ type SavedFeedRow = {
   id: string; name: string; category: string | null; keywords: string | null;
   sort: string; created_at: string;
 };
+type HistoryRow = {
+  id: string; item_id: string; item_title: string; item_url: string;
+  item_category: string | null; item_thumbnail: string | null; read_at: string;
+};
 type CatInfo = { label: string; color: string };
 
 export default function ProfileClient({
   initialBookmarks,
   initialSavedFeeds,
+  initialHistory = [],
   categories,
 }: {
   initialBookmarks: BookmarkRow[];
   initialSavedFeeds: SavedFeedRow[];
+  initialHistory?: HistoryRow[];
   categories: Record<string, CatInfo>;
 }) {
   const [bookmarks, setBookmarks] = useState(initialBookmarks);
   const [savedFeeds, setSavedFeeds] = useState(initialSavedFeeds);
+  const [history, setHistory] = useState(initialHistory);
 
   const removeBookmark = async (itemId: string) => {
     const res = await fetch(`/api/bookmarks?item_id=${encodeURIComponent(itemId)}`, { method: 'DELETE' });
@@ -170,6 +177,75 @@ export default function ProfileClient({
                     </svg>
                   </button>
                 </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Reading history */}
+      <section style={{ marginBottom: '3rem' }} id="history">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '0.625rem', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.01em', margin: 0 }}>
+            Recently Read
+          </h2>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
+              {history.length} items
+            </span>
+            {history.length > 0 && (
+              <button
+                onClick={async () => {
+                  const res = await fetch('/api/history', { method: 'DELETE' });
+                  if (res.ok) setHistory([]);
+                }}
+                style={{ fontSize: '0.68rem', color: 'var(--text-faint)', background: 'none', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+        {history.length === 0 ? (
+          <div className="feed-empty" style={{ textAlign: 'left' }}>
+            No reading history yet. Stories you open will appear here.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {history.map(h => {
+              const cat = h.item_category ? categories[h.item_category] : null;
+              const ago = (() => {
+                const diff = Date.now() - new Date(h.read_at).getTime();
+                const hr = Math.floor(diff / 3_600_000);
+                if (hr < 1) return `${Math.floor(diff / 60_000)}m ago`;
+                if (hr < 24) return `${hr}h ago`;
+                return `${Math.floor(hr / 24)}d ago`;
+              })();
+              return (
+                <a
+                  key={h.id}
+                  href={h.item_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 12px', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 10, textDecoration: 'none', color: 'inherit', transition: 'border-color 0.15s' }}
+                  className="history-row"
+                >
+                  {h.item_thumbnail ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={h.item_thumbnail} alt="" width={48} height={36} style={{ borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 48, height: 36, borderRadius: 6, background: 'var(--surface)', border: '1px solid var(--border)', flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {h.item_title}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 3, fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--text-faint)' }}>
+                      {cat && <span style={{ color: cat.color }}>{cat.label}</span>}
+                      <span>{ago}</span>
+                    </div>
+                  </div>
+                </a>
               );
             })}
           </div>

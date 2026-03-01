@@ -319,6 +319,7 @@ export function SiteFooter() {
           <div>
             <div className="footer-col-title">Read</div>
             <Link href="/" className="footer-link">All Stories</Link>
+            <Link href="/trending" className="footer-link">Trending</Link>
             <Link href="/ai" className="footer-link">AI &amp; Research</Link>
             <Link href="/science" className="footer-link">Science</Link>
             <Link href="/business" className="footer-link">Business</Link>
@@ -326,14 +327,16 @@ export function SiteFooter() {
           <div>
             <div className="footer-col-title">Account</div>
             <Link href="/newsletter" className="footer-link">Newsletter</Link>
+            <Link href="/search" className="footer-link">Search</Link>
             <Link href="/profile" className="footer-link">Profile</Link>
             <Link href="/profile#bookmarks" className="footer-link">Bookmarks</Link>
           </div>
           <div>
             <div className="footer-col-title">Project</div>
+            <Link href="/about" className="footer-link">About</Link>
+            <Link href="/privacy" className="footer-link">Privacy</Link>
             <a href="https://github.com/WokSpec/WokPost" target="_blank" rel="noopener noreferrer" className="footer-link">GitHub</a>
             <a href="/api/feed?format=rss" className="footer-link">RSS Feed</a>
-            <a href="https://wokspec.org" target="_blank" rel="noopener noreferrer" className="footer-link">WokSpec</a>
           </div>
         </div>
         <div className="footer-bottom">

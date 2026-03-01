@@ -6,6 +6,7 @@ import { CommentsSection } from '@/components/CommentsSection';
 import { NewsletterBar } from '@/components/FeedComponents';
 import { ReadingProgress } from '@/components/ReadingProgress';
 import { VoteButton } from '@/components/VoteButton';
+import { HistoryTracker } from '@/components/HistoryTracker';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -152,6 +153,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   return (
     <>
       <ReadingProgress />
+      <HistoryTracker
+        itemId={item.id}
+        itemTitle={item.title}
+        itemUrl={item.url}
+        itemCategory={item.category}
+        itemThumbnail={item.thumbnail}
+      />
 
       {/* Page header band */}
       <div style={{

@@ -9,7 +9,17 @@ function getDB(): D1Database | null {
 }
 
 function getIP(req: Request) {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  return req.headers.get('cf-connecting-ip')
+    ?? req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? 'unknown';
+}
+
+function hashIP(ip: string): string {
+  let h = 0;
+  for (let i = 0; i < ip.length; i++) {
+    h = Math.imul(31, h) + ip.charCodeAt(i) | 0;
+  }
+  return (h >>> 0).toString(36);
 }
 
 function nanoid() {
@@ -49,20 +59,20 @@ export async function POST(req: Request) {
   const db = getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
-  // Simple rate limit: 5 comments per IP per hour (via D1)
-  const ip = getIP(req);
-  const since = new Date(Date.now() - 3600_000).toISOString();
-  const { results: recent } = await db.prepare(
-    'SELECT COUNT(*) as cnt FROM comments WHERE author_name = ? AND created_at > ?'
-  ).bind(ip, since).all();
-  if ((recent[0]?.cnt as number) >= 5) {
-    return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
+  // Rate limit: 5 comments per IP per hour
+  const ipHash = hashIP(getIP(req));
+  const since = new Date(Date.now() - 3_600_000).toISOString();
+  const rateRow = await db.prepare(
+    'SELECT COUNT(*) as cnt FROM comments WHERE ip_hash = ? AND created_at > ?'
+  ).bind(ipHash, since).first();
+  if ((rateRow?.cnt as number) >= 5) {
+    return NextResponse.json({ error: 'Rate limited — try again later' }, { status: 429 });
   }
 
   const id = nanoid();
   await db.prepare(
-    'INSERT INTO comments (id, post_id, author_name, content) VALUES (?, ?, ?, ?)'
-  ).bind(id, postId, authorName, content).run();
+    'INSERT INTO comments (id, post_id, author_name, content, ip_hash) VALUES (?, ?, ?, ?, ?)'
+  ).bind(id, postId, authorName, content, ipHash).run();
 
   return NextResponse.json({ ok: true, id, author_name: authorName, content, created_at: new Date().toISOString() });
 }
