@@ -361,6 +361,16 @@ export async function fetchAllSources(sources: FeedSource[]): Promise<FeedItem[]
       if (!seenUrls.has(urlKey) && !seenTitles.has(titleKey)) {
         seenUrls.add(urlKey);
         seenTitles.add(titleKey);
+        // Ensure every item has at least a minimal summary
+        if (!item.summary || item.summary.length < 20) {
+          if (item.contentType === 'repo' && item.tags?.length) {
+            item.summary = `A ${item.repoLanguage ?? 'software'} project: ${item.tags.slice(0, 5).join(' · ')}`;
+          } else if (item.contentType === 'paper') {
+            item.summary = `Research paper in ${item.category}.`;
+          } else {
+            item.summary = `${item.sourceName} — ${item.title.slice(0, 120)}`;
+          }
+        }
         all.push(item);
       }
     }

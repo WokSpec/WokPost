@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import type { FeedItem } from '@/lib/feed/types';
 
 export const metadata: Metadata = {
-  title: 'Trending — WokPost',
+  title: 'Trending',
   description: 'The top stories trending across all categories right now.',
 };
 

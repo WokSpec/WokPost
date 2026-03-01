@@ -8,7 +8,9 @@ import { StockTicker } from '@/components/StockTicker';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'WokPost — Workflow insights for builders',
+  title: {
+    absolute: 'WokPost — Workflow insights for builders',
+  },
   description: 'Curated workflow tips, tools, and tutorials for indie developers, creators, and businesses.',
   openGraph: {
     type: 'website',

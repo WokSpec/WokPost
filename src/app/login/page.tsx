@@ -4,7 +4,7 @@ import { auth } from '@/auth';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Sign In — WokPost',
+  title: 'Sign In',
   description: 'Sign in to save bookmarks and create custom feeds.',
 };
 

@@ -109,13 +109,13 @@ function Favicon({ url, size = 14 }: { url: string; size?: number }) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const item = await resolveItem(decodeURIComponent(id));
-  if (!item) return { title: 'Story Not Found — WokPost' };
+  if (!item) return { title: 'Story Not Found' };
   const description = item.contentType === 'repo'
     ? (item.summary || `Open source repository: ${item.title}`)
     : item.summary?.slice(0, 160) || undefined;
   const ogUrl = `https://wokpost.wokspec.org/api/og?title=${encodeURIComponent(item.title)}&category=${encodeURIComponent(item.category)}&source=${encodeURIComponent(item.sourceName)}${item.score ? `&score=${item.score}` : ''}`;
   return {
-    title: `${item.title} — WokPost`,
+    title: `${item.title}`,
     description,
     openGraph: {
       title: item.title,

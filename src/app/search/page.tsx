@@ -94,8 +94,16 @@ function SearchResults() {
 
       {/* Results */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
-          Searching…
+        <div className="feed-grid">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="skeleton-card">
+              <div className="skeleton skeleton-image" />
+              <div className="skeleton skeleton-title" />
+              <div className="skeleton skeleton-line" />
+              <div className="skeleton skeleton-line short" />
+              <div className="skeleton skeleton-meta" />
+            </div>
+          ))}
         </div>
       )}
 

@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
   const cat = CATEGORIES[category as Category];
   if (!cat) return { title: 'Not Found' };
   return {
-    title: `${cat.label} — WokPost`,
+    title: `${cat.label}`,
     description: cat.description,
   };
 }

@@ -4,7 +4,7 @@ import { CATEGORIES } from '@/lib/feed/types';
 import ProfileClient from './ProfileClient';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'My Profile — WokPost' };
+export const metadata: Metadata = { title: 'My Profile' };
 
 type BookmarkRow = {
   id: string; item_id: string; item_title: string; item_url: string;
