@@ -106,7 +106,7 @@ export async function GET(req: Request) {
         editorialSlug: p.slug,
       }));
       // Prepend featured editorial posts, then merge rest
-      const featuredEdit = editItems.filter(e => (editPosts as {id:string|number;featured:number}[]).find(p => `editorial-${p.id}` === e.id)?.featured === 1);
+      const featuredEdit = editItems.filter(e => (editPosts as {slug:string|number;featured:number}[]).find(p => `editorial-${p.slug}` === e.id)?.featured === 1);
       const regularEdit = editItems.filter(e => !featuredEdit.includes(e));
       items = [...featuredEdit, ...items, ...regularEdit];
     }
