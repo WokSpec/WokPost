@@ -75,6 +75,46 @@ export async function GET(req: Request) {
     persistItems(items); // fire-and-forget
   }
 
+  // Inject editorial posts from D1 (always fresh, not cached)
+  try {
+    // @ts-expect-error — Cloudflare D1
+    const db = globalThis.__env__?.DB as D1Database | undefined;
+    if (db) {
+      const editQuery = category
+        ? 'SELECT * FROM editorial_posts WHERE published = 1 AND category = ?1 ORDER BY featured DESC, created_at DESC LIMIT 20'
+        : 'SELECT * FROM editorial_posts WHERE published = 1 ORDER BY featured DESC, created_at DESC LIMIT 20';
+      const { results: editPosts } = await (category
+        ? db.prepare(editQuery).bind(category)
+        : db.prepare(editQuery)
+      ).all();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const editItems: FeedItem[] = (editPosts as any[]).map(p => ({
+        id: `editorial-${p.id}`,
+        title: p.title,
+        url: `/editorial/${p.slug}`,
+        sourceId: 'wokpost-editorial',
+        sourceName: p.author_name,
+        sourceType: 'editorial' as const,
+        sourceTier: 1 as const,
+        contentType: 'editorial' as const,
+        category: p.category,
+        aiTagged: false,
+        aiScore: 9,
+        publishedAt: p.created_at,
+        summary: p.excerpt,
+        tags: (() => { try { return JSON.parse(p.tags); } catch { return []; } })(),
+        thumbnail: p.cover_image ?? undefined,
+        authorName: p.author_name,
+        authorAvatar: p.author_avatar ?? undefined,
+        editorialSlug: p.slug,
+      }));
+      // Prepend featured editorial posts, then merge rest
+      const featuredEdit = editItems.filter(e => (editPosts as {featured:number}[]).find(p => `editorial-${p.id}` === e.id)?.featured === 1);
+      const regularEdit = editItems.filter(e => !featuredEdit.includes(e));
+      items = [...featuredEdit, ...items, ...regularEdit];
+    }
+  } catch { /* editorial posts unavailable */ }
+
   let filtered = items as FeedItem[];
 
   // Filter

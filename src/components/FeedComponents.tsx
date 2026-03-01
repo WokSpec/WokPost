@@ -57,19 +57,14 @@ export function SiteHeader() {
         </Link>
         <nav className="header-nav">
           <Link href="/" className="nav-link">Home</Link>
+          <Link href="/trending" className="nav-link" data-hide-mobile="">Trending</Link>
           <Link href="/#categories" className="nav-link" data-hide-mobile="">Categories</Link>
           <Link href="/newsletter" className="nav-link" data-hide-mobile="">Newsletter</Link>
-          <a
-            href="https://wokspec.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="nav-link"
-            data-hide-mobile=""
-          >
-            WokSpec
-          </a>
         </nav>
         <div className="header-actions">
+          <Link href="/search" className="header-search-btn" aria-label="Search">
+            <IconSearch />
+          </Link>
           <AuthButton />
         </div>
       </div>
@@ -128,7 +123,11 @@ export function FeedCard({
   })();
   const isRepo = item.contentType === 'repo';
   const isPaper = item.contentType === 'paper';
-  const internalHref = `/post/${encodeURIComponent(item.id)}`;
+  const isEditorial = item.contentType === 'editorial';
+  // Editorial posts route to /editorial/[slug], everything else to /post/[id]
+  const internalHref = isEditorial && item.editorialSlug
+    ? `/editorial/${item.editorialSlug}`
+    : `/post/${encodeURIComponent(item.id)}`;
   const readingTime = isRepo ? null : Math.max(1, Math.ceil((item.summary?.length ?? 0) / 200 + item.title.length / 100));
   const catColor = cat?.color ?? 'var(--accent)';
 
@@ -202,9 +201,10 @@ export function FeedCard({
         <div className="card-header-row">
           <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="card-tag" style={{ color: catColor }}>{cat?.label ?? item.category}</span>
-            {item.sourceTier === 1 && <span className="tier1-badge">T1</span>}
+            {item.sourceTier === 1 && !isEditorial && <span className="tier1-badge">T1</span>}
             {isRepo && <span className="source-type-badge source-type-repo">Repo</span>}
             {isPaper && <span className="source-type-badge source-type-paper">Paper</span>}
+            {isEditorial && <span className="source-type-badge source-type-editorial">Editorial</span>}
           </div>
           <div style={{ display: 'flex', gap: 2, alignItems: 'center', flexShrink: 0 }}>
             {item.aiTagged && (
@@ -236,14 +236,29 @@ export function FeedCard({
           <div className="card-title">{item.title}</div>
         </Link>
 
-        {item.summary && !showImage && (
+        {item.summary && (
           <div className="card-summary">
-            {item.summary.slice(0, 120)}{item.summary.length > 120 ? '\u2026' : ''}
+            {item.summary.slice(0, showImage ? 100 : 160)}{item.summary.length > (showImage ? 100 : 160) ? '\u2026' : ''}
+          </div>
+        )}
+
+        {/* Editorial author pill */}
+        {isEditorial && item.authorName && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+            {item.authorAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.authorAvatar} alt="" width={16} height={16} style={{ borderRadius: '50%', border: '1px solid var(--border)' }} />
+            ) : (
+              <div style={{ width: 16, height: 16, borderRadius: '50%', background: catColor + '33', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 800, color: catColor }}>
+                {item.authorName.charAt(0)}
+              </div>
+            )}
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{item.authorName}</span>
           </div>
         )}
 
         <div className="card-meta">
-          {domain && (
+          {!isEditorial && domain && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`}
@@ -254,14 +269,18 @@ export function FeedCard({
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           )}
-          <span style={{ fontWeight: item.sourceTier === 1 ? 600 : undefined, color: item.sourceTier === 1 ? 'var(--text-muted)' : undefined }}>
-            {item.sourceName}
-          </span>
+          {isEditorial ? (
+            <span style={{ fontWeight: 600, color: 'var(--accent)' }}>WokPost</span>
+          ) : (
+            <span style={{ fontWeight: item.sourceTier === 1 ? 600 : undefined, color: item.sourceTier === 1 ? 'var(--text-muted)' : undefined }}>
+              {item.sourceName}
+            </span>
+          )}
           <span style={{ color: 'var(--border-strong)' }}>·</span>
           <span><time dateTime={item.publishedAt}>{timeAgo(item.publishedAt)}</time></span>
           {readingTime && <span className="reading-time">{readingTime}m read</span>}
           {isRepo && item.repoLanguage && <span className="reading-time">{item.repoLanguage}</span>}
-          {item.score !== undefined && !isRepo && (
+          {item.score !== undefined && !isRepo && !isEditorial && (
             <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{item.score} pts</span></>
           )}
           {isRepo && item.score !== undefined && (

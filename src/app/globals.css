@@ -1416,3 +1416,145 @@ h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading); }
 
 /* ── History row ─────────────────────────────────────────────────────── */
 .history-row:hover { border-color: var(--accent) !important; }
+
+/* ── Editorial badge ─────────────────────────────────────────────────── */
+.source-type-editorial {
+  background: rgba(99,102,241,0.12);
+  color: #818cf8;
+  border: 1px solid rgba(99,102,241,0.25);
+}
+
+/* ── Editorial post content ──────────────────────────────────────────── */
+.editorial-content h2 { font-size: 1.35rem; font-weight: 800; margin: 2rem 0 0.75rem; letter-spacing: -0.03em; }
+.editorial-content h3 { font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+.editorial-content img { width: 100%; border-radius: 12px; margin: 1.5rem 0; display: block; }
+.editorial-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 0.75rem 1.25rem;
+  margin: 1.5rem 0;
+  background: var(--surface-raised);
+  border-radius: 0 10px 10px 0;
+  font-style: italic;
+  color: var(--text-muted);
+}
+.editorial-content pre {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+}
+.editorial-content pre code { background: none; border: none; padding: 0; font-size: 0.82rem; }
+
+/* ── Write / Editor layout ───────────────────────────────────────────── */
+.write-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 0;
+  height: calc(100vh - 58px - 54px);
+  overflow: hidden;
+}
+.write-sidebar {
+  border-right: 1px solid var(--border);
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--surface);
+}
+.write-main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+}
+.write-title-input {
+  padding: 1.5rem 2rem 0.75rem;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  width: 100%;
+}
+.write-title-input::placeholder { color: var(--text-faint); }
+.write-body-input {
+  flex: 1;
+  padding: 0.5rem 2rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.925rem;
+  line-height: 1.8;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+}
+.write-body-input::placeholder { color: var(--text-faint); }
+.write-field { display: flex; flex-direction: column; gap: 5px; }
+.write-field label { font-size: 0.72rem; font-weight: 700; color: var(--text-faint); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.write-post-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.write-post-row:hover { border-color: var(--accent); }
+
+/* ── Header search button ────────────────────────────────────────────── */
+.header-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.header-search-btn:hover { border-color: var(--accent); color: var(--text); }
+
+/* ── Card full-click area enhancement ───────────────────────────────── */
+.card {
+  position: relative;
+  outline-offset: 2px;
+  transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+.card:hover {
+  border-color: var(--accent) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+.card:active { transform: translateY(0); }
+
+/* ── Summary always visible ──────────────────────────────────────────── */
+.card-summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Responsive write layout ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .write-layout { grid-template-columns: 1fr; height: auto; }
+  .write-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  .write-main { height: 60vh; }
+}

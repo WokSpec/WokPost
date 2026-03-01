@@ -1,5 +1,3 @@
-import { FEED_SOURCES } from '@/lib/feed/sources';
-import { fetchAllSources } from '@/lib/feed/aggregator';
 import { CATEGORIES } from '@/lib/feed/types';
 import { FeedCard, NewsletterBar } from '@/components/FeedComponents';
 import type { Metadata } from 'next';
@@ -12,8 +10,46 @@ export const metadata: Metadata = {
 
 export const revalidate = 900; // 15 min
 
+async function getTrending(): Promise<FeedItem[]> {
+  // Try KV cache first (same data the main feed uses)
+  try {
+    // @ts-expect-error — Cloudflare KV injected at runtime
+    const kv = globalThis.__env__?.FEED_CACHE;
+    if (kv) {
+      const cached = await kv.get('feed:all', 'json') as FeedItem[] | null;
+      if (cached && cached.length > 0) return cached;
+    }
+  } catch { /* no KV */ }
+
+  // Try D1 as fallback
+  try {
+    // @ts-expect-error — Cloudflare D1
+    const db = globalThis.__env__?.DB as D1Database | undefined;
+    if (db) {
+      const { results } = await db.prepare(
+        `SELECT id,title,url,source_id,source_name,source_type,source_tier,content_type,
+                category,ai_tagged,ai_score,published_at,summary,tags,thumbnail,score
+         FROM feed_items ORDER BY fetched_at DESC LIMIT 200`
+      ).all();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (results as any[]).map(r => ({
+        id: r.id, title: r.title, url: r.url,
+        sourceId: r.source_id, sourceName: r.source_name,
+        sourceType: r.source_type, sourceTier: r.source_tier,
+        contentType: r.content_type ?? 'story',
+        category: r.category, aiTagged: !!r.ai_tagged,
+        aiScore: r.ai_score ?? 5, publishedAt: r.published_at,
+        summary: r.summary ?? '', tags: [],
+        thumbnail: r.thumbnail ?? undefined, score: r.score ?? undefined,
+      }));
+    }
+  } catch { /* D1 unavailable */ }
+
+  return [];
+}
+
 export default async function TrendingPage() {
-  const items = await fetchAllSources(FEED_SOURCES).catch(() => [] as FeedItem[]);
+  const items = await getTrending();
 
   // Score = (score ?? 0) * 2 + (aiScore * 3) + (commentCount ?? 0)
   const sorted = [...items]
