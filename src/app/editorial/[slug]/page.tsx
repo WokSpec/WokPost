@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { CATEGORIES } from '@/lib/feed/types';
 import { CommentsSection } from '@/components/CommentsSection';
 import { ReadingProgress } from '@/components/ReadingProgress';
+import { VoteButton } from '@/components/VoteButton';
+import { ShareButtons } from '@/components/ShareButtons';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -134,6 +136,12 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
             ))}
           </div>
         )}
+
+        {/* Vote + share row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: '1.75rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+          <VoteButton postId={post.id} />
+          <ShareButtons title={post.title} />
+        </div>
 
         {/* Comments */}
         <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>

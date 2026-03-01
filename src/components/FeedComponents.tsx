@@ -9,6 +9,7 @@ import type { FeedItem } from '@/lib/feed/types';
 import { NewsletterFormInline } from './NewsletterForm';
 import { AuthButton } from './AuthButton';
 import { useToast } from './ToastProvider';
+import { VoteButton } from './VoteButton';
 
 /* ── SVG Icons ──────────────────────────────────────────────────────── */
 export const IconBookmark = ({ filled }: { filled?: boolean }) => (
@@ -293,6 +294,11 @@ export function FeedCard({
             <><span style={{ color: 'var(--border-strong)' }}>·</span><span>{item.commentCount} comments</span></>
           )}
         </div>
+        {isEditorial && (
+          <div style={{ marginTop: 8 }} onClick={e => e.stopPropagation()}>
+            <VoteButton postId={item.id} />
+          </div>
+        )}
       </div>
     </div>
   );
