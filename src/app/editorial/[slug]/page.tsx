@@ -31,6 +31,17 @@ async function getPost(slug: string): Promise<PostRow | null> {
   } catch { return null; }
 }
 
+async function getRelatedPosts(category: string, excludeId: string): Promise<PostRow[]> {
+  try {
+    const db = await (async () => { try { const { getDB } = await import('@/lib/cloudflare'); return await getDB(); } catch { return undefined; } })();
+    if (!db) return [];
+    const { results } = await db.prepare(
+      'SELECT * FROM editorial_posts WHERE published = 1 AND category = ?1 AND id != ?2 ORDER BY featured DESC, created_at DESC LIMIT 3'
+    ).bind(category, excludeId).all() as { results: PostRow[] };
+    return results;
+  } catch { return []; }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPost(slug);
@@ -48,6 +59,10 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) notFound();
+
+  const [relatedPosts] = await Promise.all([
+    getRelatedPosts(post.category, post.id),
+  ]);
 
   const cat = CATEGORIES[post.category as keyof typeof CATEGORIES];
   const catColor = cat?.color ?? 'var(--accent)';
@@ -150,6 +165,42 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
             <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
               <CommentsSection postId={post.id} />
             </div>
+
+            {/* Related posts */}
+            {relatedPosts.length > 0 && (
+              <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border)' }}>
+                <div className="section-header" style={{ marginBottom: '1.25rem' }}>
+                  <span className="section-title">More in {cat?.label ?? post.category}</span>
+                  <Link href="/editorial" style={{ fontSize: '0.65rem', color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-mono)' }}>View all →</Link>
+                </div>
+                <div className="related-posts-grid">
+                  {relatedPosts.map(rp => {
+                    const rpCat = CATEGORIES[rp.category as keyof typeof CATEGORIES];
+                    const rpColor = rpCat?.color ?? '#818cf8';
+                    const rpMins = Math.max(1, Math.ceil(rp.content.replace(/<[^>]+>/g, '').split(/\s+/).length / 200));
+                    return (
+                      <Link key={rp.id} href={`/editorial/${rp.slug}`} className="related-post-card">
+                        {rp.cover_image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={rp.cover_image} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', display: 'block' }} />
+                        ) : (
+                          <div style={{ height: 80, background: `linear-gradient(135deg, ${rpColor}22 0%, ${rpColor}08 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                            ✍️
+                          </div>
+                        )}
+                        <div className="related-post-card-body">
+                          <span style={{ fontSize: '0.58rem', fontWeight: 700, color: rpColor, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+                            {rpCat?.label ?? rp.category}
+                          </span>
+                          <div className="related-post-card-title">{rp.title}</div>
+                          <div className="related-post-card-meta">{rpMins}m read · {rp.views} views</div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <TableOfContents />

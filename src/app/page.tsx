@@ -29,13 +29,16 @@ export default async function HomePage() {
   try { items = await fetchAllSources(FEED_SOURCES.slice(0, 40)); } catch { /* build-time */ }
 
   // Inject editorial posts from D1 if available
+  type EditorialRaw = { id: unknown; title: unknown; slug: unknown; category: unknown; excerpt: unknown; created_at: unknown; cover_image: unknown; author_name: unknown; author_avatar: unknown; };
+  let editorialSidebar: EditorialRaw[] = [];
   try {
     const { getDB } = await import('@/lib/cloudflare');
     const db = await getDB();
     if (db) {
       const { results: editPosts } = await db.prepare(
         'SELECT * FROM editorial_posts WHERE published = 1 ORDER BY featured DESC, created_at DESC LIMIT 10'
-      ).all() as { results: Record<string, unknown>[] };
+      ).all() as { results: EditorialRaw[] };
+      editorialSidebar = editPosts.slice(0, 5);
       const editorialItems = editPosts.map(ep => ({
         id: String(ep.id),
         title: String(ep.title),
@@ -191,6 +194,39 @@ export default async function HomePage() {
                 </a>
               ))}
             </div>
+
+            {/* From the Editor */}
+            {editorialSidebar.length > 0 && (
+              <div className="sidebar-widget">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span className="section-title">From the Editor</span>
+                  <Link href="/editorial" style={{ fontSize: '0.65rem', color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-mono)' }}>
+                    All posts →
+                  </Link>
+                </div>
+                {editorialSidebar.map(ep => {
+                  const cat = CATEGORIES[String(ep.category) as keyof typeof CATEGORIES];
+                  return (
+                    <Link key={String(ep.id)} href={`/editorial/${ep.slug}`} className="editor-post-item">
+                      {ep.cover_image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={String(ep.cover_image)} alt="" className="editor-post-thumb" />
+                      ) : (
+                        <div className="editor-post-thumb" style={{ background: `${cat?.color ?? '#818cf8'}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                          ✍️
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="editor-post-title">{String(ep.title)}</div>
+                        <div className="editor-post-meta">
+                          {String(ep.author_name)} · {cat?.label ?? String(ep.category)}
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </aside>
         </div>
       </div>

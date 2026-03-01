@@ -59,8 +59,8 @@ export function SiteHeader() {
         </Link>
         <nav className="header-nav">
           <Link href="/" className="nav-link">Home</Link>
+          <Link href="/editorial" className="nav-link" data-hide-mobile="">Editorial</Link>
           <Link href="/trending" className="nav-link" data-hide-mobile="">Trending</Link>
-          <Link href="/#categories" className="nav-link" data-hide-mobile="">Categories</Link>
           <Link href="/newsletter" className="nav-link" data-hide-mobile="">Newsletter</Link>
         </nav>
         <div className="header-actions">
@@ -350,6 +350,7 @@ export function SiteFooter() {
           <div>
             <div className="footer-col-title">Read</div>
             <Link href="/" className="footer-link">All Stories</Link>
+            <Link href="/editorial" className="footer-link">Editorial</Link>
             <Link href="/trending" className="footer-link">Trending</Link>
             <Link href="/ai" className="footer-link">AI &amp; Research</Link>
             <Link href="/science" className="footer-link">Science</Link>
