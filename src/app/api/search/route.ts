@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     `).bind(pattern, limit, offset).all(),
 
     db.prepare(`
-      SELECT id, title, url, 'WokPost' as source_name, category, excerpt as summary,
+      SELECT id, title, ('/editorial/' || slug) as url, 'WokPost' as source_name, category, excerpt as summary,
              cover_image as thumbnail, created_at as published_at, 0 as score,
              'editorial' as result_type, slug
       FROM editorial_posts
