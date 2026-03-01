@@ -6,6 +6,7 @@ import { KeyboardHelp } from '@/components/KeyboardHelp';
 import { ToastProvider } from '@/components/ToastProvider';
 import { SessionProvider } from 'next-auth/react';
 import { auth } from '@/auth';
+import { EralCompanion } from '@/components/EralCompanion';
 import Script from 'next/script';
 
 const spaceGrotesk = Space_Grotesk({
@@ -69,6 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main>{children}</main>
           <SiteFooter />
           <KeyboardHelp />
+          <EralCompanion />
           </ToastProvider>
         </SessionProvider>
         {process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN && (
