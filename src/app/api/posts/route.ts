@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 
 function getDB() {
-  // @ts-expect-error — Cloudflare D1 injected at runtime
-  return globalThis.__env__?.DB as D1Database | undefined;
+  try {
+    // @ts-expect-error — Cloudflare D1 injected at runtime
+    return globalThis.__env__?.DB as D1Database | undefined;
+  } catch { return undefined; }
 }
 
 function nanoid() {
@@ -28,7 +30,7 @@ export async function GET(req: Request) {
   const authorOnly = searchParams.get('author') === '1';
 
   const db = getDB();
-  if (!db) return NextResponse.json({ posts: [], total: 0 });
+  if (!db) return NextResponse.json({ posts: [], total: 0, _debug: 'no_db' });
 
   // Only call auth() when needed (author view)
   let isAuthor = false;
@@ -51,15 +53,19 @@ export async function GET(req: Request) {
   query += ` ORDER BY featured DESC, created_at DESC LIMIT ?${binds.length + 1} OFFSET ?${binds.length + 2}`;
   binds.push(limit, offset);
 
-  const { results } = await db.prepare(query).bind(...binds).all();
+  try {
+    const { results } = await db.prepare(query).bind(...binds).all();
 
-  // Total count
-  let countQuery = 'SELECT COUNT(*) as cnt FROM editorial_posts WHERE 1=1';
-  if (!isAuthor) countQuery += ' AND published = 1';
-  if (category) countQuery += ' AND category = ?1';
-  const countRow = await db.prepare(countQuery).bind(...(category ? [category] : [])).first();
+    // Total count
+    let countQuery = 'SELECT COUNT(*) as cnt FROM editorial_posts WHERE 1=1';
+    if (!isAuthor) countQuery += ' AND published = 1';
+    if (category) countQuery += ' AND category = ?1';
+    const countRow = await db.prepare(countQuery).bind(...(category ? [category] : [])).first();
 
-  return NextResponse.json({ posts: results, total: countRow?.cnt ?? 0 });
+    return NextResponse.json({ posts: results, total: countRow?.cnt ?? 0 });
+  } catch (e) {
+    return NextResponse.json({ posts: [], total: 0, _debug: 'query_error', error: String(e) });
+  }
 }
 
 // POST /api/posts — create a new editorial post (author only)
