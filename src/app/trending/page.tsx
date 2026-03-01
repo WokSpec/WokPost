@@ -1,5 +1,6 @@
 import { CATEGORIES } from '@/lib/feed/types';
 import { FeedCard, NewsletterBar } from '@/components/FeedComponents';
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import type { FeedItem } from '@/lib/feed/types';
 
@@ -48,6 +49,19 @@ async function getTrending(): Promise<FeedItem[]> {
 
 export default async function TrendingPage() {
   const items = await getTrending();
+
+  // Fetch popular editorial posts (most viewed)
+  type EditorialPost = { id: string; slug: string; title: string; excerpt: string; category: string; views: number; author_name: string; created_at: string; };
+  let popularEditorial: EditorialPost[] = [];
+  try {
+    const db = await (async () => { try { const { getDB } = await import('@/lib/cloudflare'); return await getDB(); } catch { return undefined; } })();
+    if (db) {
+      const { results } = await db.prepare(
+        'SELECT id, slug, title, excerpt, category, views, author_name, created_at FROM editorial_posts WHERE published = 1 ORDER BY views DESC, created_at DESC LIMIT 4'
+      ).all() as { results: EditorialPost[] };
+      popularEditorial = results;
+    }
+  } catch { /* no D1 */ }
 
   // Score = (score ?? 0) * 2 + (aiScore * 3) + (commentCount ?? 0)
   const sorted = [...items]
@@ -125,6 +139,48 @@ export default async function TrendingPage() {
                 )}
               </div>
             </a>
+          </div>
+        )}
+
+        {/* Editorial Picks */}
+        {popularEditorial.length > 0 && (
+          <div style={{ marginBottom: '3rem', padding: '1.5rem', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+              <div>
+                <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                  ✍️ Editor picks
+                </div>
+                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.025em' }}>
+                  From the Editor
+                </div>
+              </div>
+              <Link href="/editorial" style={{ fontSize: '0.72rem', color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+                All posts →
+              </Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+              {popularEditorial.map(ep => {
+                const cat = CATEGORIES[ep.category as keyof typeof CATEGORIES];
+                return (
+                  <Link key={ep.id} href={`/editorial/${ep.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', gap: 6, padding: '0.875rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, transition: 'border-color 0.15s' }} className="related-post-card">
+                    <span style={{ fontSize: '0.58rem', fontWeight: 700, color: cat?.color ?? '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+                      {cat?.label ?? ep.category}
+                    </span>
+                    <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '0.875rem', lineHeight: 1.35, letterSpacing: '-0.02em' }}>
+                      {ep.title}
+                    </div>
+                    {ep.excerpt && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                        {ep.excerpt.slice(0, 90)}{ep.excerpt.length > 90 ? '…' : ''}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.62rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+                      {ep.author_name} · {ep.views} views
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
 

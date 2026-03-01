@@ -168,6 +168,9 @@ export default function WriteClient({ author }: Props) {
               <div className="write-field">
                 <label>Excerpt (shown in cards)</label>
                 <textarea className="form-input" rows={3} value={form.excerpt} onChange={e => setForm(f => ({ ...f, excerpt: e.target.value }))} placeholder="Brief description…" style={{ resize: 'vertical' }} />
+                <div style={{ fontSize: '0.62rem', color: form.excerpt.length > 200 ? 'var(--red)' : 'var(--text-faint)', fontFamily: 'var(--font-mono)', textAlign: 'right', marginTop: 3 }}>
+                  {form.excerpt.length}/200 chars
+                </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
