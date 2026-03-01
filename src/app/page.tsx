@@ -6,6 +6,7 @@ import { CategoryStrip, NewsletterBar } from '@/components/FeedComponents';
 import { InteractiveFeed } from '@/components/InteractiveFeed';
 import { StockTicker } from '@/components/StockTicker';
 import type { Metadata } from 'next';
+import { IcoPen, CATEGORY_ICONS } from '@/components/Icons';
 
 export const metadata: Metadata = {
   title: {
@@ -78,13 +79,17 @@ export default async function HomePage() {
   const topAI = items.filter(i => i.aiTagged).slice(0, 6);
   const feedItems = items.filter(i => i.id !== featured?.id).slice(0, 60);
 
+  // Category counts for the strip
+  const catCounts: Record<string, number> = {};
+  for (const item of items) {
+    catCounts[item.category] = (catCounts[item.category] ?? 0) + 1;
+  }
+
   return (
     <>
       <StockTicker />
 
-      <div className="site-container">
-        <CategoryStrip />
-      </div>
+      <CategoryStrip counts={catCounts} />
 
       {/* Featured hero */}
       {featured && (
@@ -212,8 +217,8 @@ export default async function HomePage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={String(ep.cover_image)} alt="" className="editor-post-thumb" />
                       ) : (
-                        <div className="editor-post-thumb" style={{ background: `${cat?.color ?? '#818cf8'}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                          ✍️
+                        <div className="editor-post-thumb" style={{ background: `${cat?.color ?? '#818cf8'}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cat?.color ?? '#818cf8' }}>
+                          {(() => { const Icon = CATEGORY_ICONS[String(ep.category)]; return Icon ? <Icon size={16} /> : <IcoPen size={14} />; })()}
                         </div>
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>

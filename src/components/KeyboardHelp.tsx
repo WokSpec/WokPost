@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { IcoX } from './Icons';
 
 const SHORTCUTS = [
   { key: '?', desc: 'Toggle this help overlay' },
@@ -46,7 +47,7 @@ export function KeyboardHelp() {
       <div className="kbd-overlay" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
         <div className="kbd-overlay-header">
           <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, letterSpacing: '-0.02em' }}>Keyboard shortcuts</span>
-          <button className="kbd-close" onClick={() => setOpen(false)} aria-label="Close">✕</button>
+          <button className="kbd-close" onClick={() => setOpen(false)} aria-label="Close"><IcoX size={14} /></button>
         </div>
         <div className="kbd-list">
           {SHORTCUTS.map(s => (

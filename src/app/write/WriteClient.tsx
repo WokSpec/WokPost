@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { CATEGORIES } from '@/lib/feed/types';
+import { IcoWrite, IcoEye, IcoLink, IcoImage, IcoCheck } from '@/components/Icons';
 
 interface Props { author: string; authorId: string; }
 
@@ -75,12 +76,12 @@ export default function WriteClient({ author }: Props) {
     try {
       if (form.id) {
         await fetch(`/api/posts/${form.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        setMsg('Saved ✓');
+        setMsg('Saved');
       } else {
         const res = await fetch('/api/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const data = await res.json() as { id?: string; slug?: string };
         setForm(f => ({ ...f, id: data.id, slug: data.slug, published: publish ?? f.published }));
-        setMsg('Created ✓');
+        setMsg('Created');
       }
       loadPosts();
     } catch { setMsg('Error saving'); }
@@ -119,8 +120,8 @@ export default function WriteClient({ author }: Props) {
           <span style={{ flex: 1, fontSize: '0.78rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
             {form.id ? `Editing: ${form.slug ?? form.id}` : 'New post'}
           </span>
-          <button className="btn btn-ghost" style={{ fontSize: '0.78rem' }} onClick={() => setView(v => v === 'preview' ? 'edit' : 'preview')}>
-            {view === 'preview' ? '✏️ Edit' : '👁 Preview'}
+          <button className="btn btn-ghost" style={{ fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: 5 }} onClick={() => setView(v => v === 'preview' ? 'edit' : 'preview')}>
+            {view === 'preview' ? <><IcoWrite size={13} /> Edit</> : <><IcoEye size={13} /> Preview</>}
           </button>
           <button className="btn btn-secondary" style={{ fontSize: '0.78rem' }} onClick={() => save(false)} disabled={saving}>
             Save draft
@@ -230,10 +231,10 @@ export default function WriteClient({ author }: Props) {
                   { label: '<>', title: 'Inline code', before: '<code>', after: '</code>' },
                   { label: '[ ]', title: 'Code block', before: '<pre><code>', after: '</code></pre>' },
                   { label: '—', title: 'Divider', before: '<hr />', after: '' },
-                  { label: '🔗', title: 'Link', before: '<a href="URL">', after: '</a>' },
-                  { label: '🖼', title: 'Image', before: '<img src="URL" alt="', after: '" style="max-width:100%;border-radius:8px" />' },
+                  { label: '🔗', title: 'Link', before: '<a href="URL">', after: '</a>', icon: <IcoLink size={12} /> },
+                  { label: '🖼', title: 'Image', before: '<img src="URL" alt="', after: '" style="max-width:100%;border-radius:8px" />', icon: <IcoImage size={12} /> },
                   { label: 'UL', title: 'Bullet list', before: '<ul>\n  <li>', after: '</li>\n</ul>' },
-                ].map(({ label, title, before, after }) => (
+                ].map(({ label, title, before, after, icon }: { label: string; title: string; before: string; after: string; icon?: React.ReactNode }) => (
                   <button
                     key={label}
                     type="button"
@@ -241,7 +242,7 @@ export default function WriteClient({ author }: Props) {
                     title={title}
                     onMouseDown={e => { e.preventDefault(); insertHtml(before, after); }}
                   >
-                    {label}
+                    {icon ?? label}
                   </button>
                 ))}
               </div>

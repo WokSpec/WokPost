@@ -63,7 +63,7 @@ export function AuthButton() {
             Bookmarks
           </Link>
           <Link href="/write" className="dropdown-item" onClick={() => setOpen(false)}>
-            ✏️ Write a post
+            Write a post
           </Link>
           <Link href="/newsletter" className="dropdown-item" onClick={() => setOpen(false)}>
             Newsletter Prefs

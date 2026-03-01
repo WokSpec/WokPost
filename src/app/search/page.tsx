@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { FeedCard } from '@/components/FeedComponents';
 import { CATEGORIES } from '@/lib/feed/types';
 import type { FeedItem, Category } from '@/lib/feed/types';
+import { IcoSearch } from '@/components/Icons';
 
 interface SearchResult {
   id: string;
@@ -125,7 +126,7 @@ function SearchResults() {
 
       {!loading && !searched && (
         <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-faint)' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔍</div>
+          <div style={{ marginBottom: '1rem', color: 'var(--text-faint)' }}><IcoSearch size={32} /></div>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Search across all categories — AI research, business, science, and more.
           </p>

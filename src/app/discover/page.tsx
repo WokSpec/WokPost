@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { CATEGORIES } from '@/lib/feed/types';
+import { IcoAI, IcoClimate, IcoHealth, IcoCrypto, IcoScience, IcoBusiness, IcoEthics, IcoPolitics, CATEGORY_ICONS } from '@/components/Icons';
 
 export const revalidate = 3600;
 
@@ -14,7 +15,7 @@ const COLLECTIONS = [
     id: 'ai-future',
     title: 'The Future of AI',
     description: 'From interpretability research to open-source releases, the biggest questions in machine intelligence.',
-    emoji: '🤖',
+    icon: <IcoAI size={22} />,
     color: '#6366f1',
     category: 'ai',
     queries: ['AI safety', 'LLM', 'machine learning', 'Anthropic', 'OpenAI'],
@@ -23,7 +24,7 @@ const COLLECTIONS = [
     id: 'climate-action',
     title: 'Climate & Energy',
     description: 'The transition to clean energy, climate migration, and the technologies reshaping how we power civilization.',
-    emoji: '🌍',
+    icon: <IcoClimate size={22} />,
     color: '#10b981',
     category: 'climate',
     queries: ['climate', 'energy transition', 'battery', 'solar', 'carbon'],
@@ -32,7 +33,7 @@ const COLLECTIONS = [
     id: 'health-longevity',
     title: 'Health & Longevity',
     description: 'Mental health, longevity science, nutrition research, and the future of medicine.',
-    emoji: '🧬',
+    icon: <IcoHealth size={22} />,
     color: '#f43f5e',
     category: 'health',
     queries: ['health', 'longevity', 'mental health', 'GLP-1', 'sleep'],
@@ -41,7 +42,7 @@ const COLLECTIONS = [
     id: 'money-markets',
     title: 'Money & Markets',
     description: 'Economics, crypto, venture capital, housing policy, and the forces shaping wealth in the 21st century.',
-    emoji: '📈',
+    icon: <IcoCrypto size={22} />,
     color: '#f59e0b',
     category: 'crypto',
     queries: ['crypto', 'bitcoin', 'economy', 'market', 'fintech'],
@@ -50,7 +51,7 @@ const COLLECTIONS = [
     id: 'science-discovery',
     title: 'Science & Discovery',
     description: 'Breakthroughs in materials, space, biology, and physics — the research redefining what is possible.',
-    emoji: '🔭',
+    icon: <IcoScience size={22} />,
     color: '#22d3ee',
     category: 'science',
     queries: ['research', 'discovery', 'study', 'scientists', 'physics'],
@@ -59,7 +60,7 @@ const COLLECTIONS = [
     id: 'work-future',
     title: 'The Future of Work',
     description: 'Remote work, automation, productivity, organizational design, and what careers will look like.',
-    emoji: '💼',
+    icon: <IcoBusiness size={22} />,
     color: '#8b5cf6',
     category: 'business',
     queries: ['remote work', 'productivity', 'startup', 'automation', 'hiring'],
@@ -68,7 +69,7 @@ const COLLECTIONS = [
     id: 'tech-platforms',
     title: 'Tech & Platforms',
     description: 'Big Tech regulation, social media, privacy, and the software eating the world.',
-    emoji: '💻',
+    icon: <IcoEthics size={22} />,
     color: '#3b82f6',
     category: 'tech',
     queries: ['software', 'platform', 'privacy', 'regulation', 'developer'],
@@ -77,7 +78,7 @@ const COLLECTIONS = [
     id: 'culture-society',
     title: 'Culture & Society',
     description: 'Books, cities, art, gaming, politics, and the forces shaping how we live together.',
-    emoji: '🏛️',
+    icon: <IcoPolitics size={22} />,
     color: '#ec4899',
     category: 'culture',
     queries: ['culture', 'society', 'cities', 'inequality', 'politics'],
@@ -146,7 +147,7 @@ export default function DiscoverPage() {
               style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', padding: '1.5rem', background: 'var(--surface-raised)', border: `1px solid ${col.color}33`, borderRadius: 14, transition: 'border-color 0.15s, transform 0.15s', cursor: 'pointer' }}
               className="discover-collection-card"
             >
-              <div style={{ fontSize: '2rem', marginBottom: '0.875rem' }}>{col.emoji}</div>
+              <div style={{ marginBottom: '0.875rem', color: col.color }}>{col.icon}</div>
               <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.025em', color: 'var(--text)', marginBottom: 8 }}>
                 {col.title}
               </div>
@@ -217,7 +218,7 @@ export default function DiscoverPage() {
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.75rem 1rem', background: 'var(--surface-raised)', border: `1px solid ${info.color}44`, borderRadius: 10, textDecoration: 'none', transition: 'border-color 0.15s, background 0.15s' }}
               className="category-pill-card"
             >
-              <span style={{ fontSize: '1.1rem' }}>{info.emoji}</span>
+              {(() => { const Icon = CATEGORY_ICONS[key]; return Icon ? <span style={{ color: info.color }}><Icon size={16} /></span> : null; })()}
               <span style={{ fontSize: '0.8rem', fontWeight: 600, color: info.color }}>{info.label}</span>
             </Link>
           ))}

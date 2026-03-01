@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { CATEGORIES } from '@/lib/feed/types';
+import { IcoNewspaper, IcoPen, IcoChat, IcoThumbUp, IcoTag, IcoGlobe } from '@/components/Icons';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -70,12 +71,12 @@ export default async function StatsPage() {
       {/* Top-level metrics */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
         {[
-          { label: 'Feed Items', value: totalFeedItems.toLocaleString(), icon: '📰', color: '#6366f1' },
-          { label: 'Editorial Posts', value: totalEditorial.toString(), icon: '✍️', color: '#a855f7' },
-          { label: 'Comments', value: totalComments.toLocaleString(), icon: '💬', color: '#22d3ee' },
-          { label: 'Votes Cast', value: totalVotes.toLocaleString(), icon: '👍', color: '#10b981' },
-          { label: 'Categories', value: categoryCounts.length.toString(), icon: '🏷️', color: '#f59e0b' },
-          { label: 'Sources', value: topSources.length + '+', icon: '🌐', color: '#f43f5e' },
+          { label: 'Feed Items', value: totalFeedItems.toLocaleString(), icon: <IcoNewspaper size={18} />, color: '#6366f1' },
+          { label: 'Editorial Posts', value: totalEditorial.toString(), icon: <IcoPen size={18} />, color: '#a855f7' },
+          { label: 'Comments', value: totalComments.toLocaleString(), icon: <IcoChat size={18} />, color: '#22d3ee' },
+          { label: 'Votes Cast', value: totalVotes.toLocaleString(), icon: <IcoThumbUp size={18} />, color: '#10b981' },
+          { label: 'Categories', value: categoryCounts.length.toString(), icon: <IcoTag size={18} />, color: '#f59e0b' },
+          { label: 'Sources', value: topSources.length + '+', icon: <IcoGlobe size={18} />, color: '#f43f5e' },
         ].map(m => (
           <div key={m.label} style={{ padding: '1.25rem', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 12 }}>
             <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{m.icon}</div>

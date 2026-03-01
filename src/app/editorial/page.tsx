@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CATEGORIES } from '@/lib/feed/types';
 import type { Metadata } from 'next';
+import { IcoPen, CATEGORY_ICONS } from '@/components/Icons';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -111,7 +112,7 @@ export default async function EditorialIndex() {
 
       {posts.length === 0 && (
         <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--text-faint)' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>✍️</div>
+          <div style={{ marginBottom: '1rem', color: 'var(--text-faint)' }}><IcoPen size={28} /></div>
           <p>No editorial posts yet. Check back soon.</p>
         </div>
       )}
@@ -232,10 +233,8 @@ function EditorialCard({ post, large = false }: { post: EditorialPost; large?: b
         />
       )}
       {!post.cover_image && (
-        <div style={{ height: large ? 120 : 80, background: `linear-gradient(135deg, ${catColor}22 0%, ${catColor}08 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: large ? '2.5rem' : '1.75rem' }}>
-            {cat?.emoji ?? '✍️'}
-          </span>
+        <div style={{ height: large ? 120 : 80, background: `linear-gradient(135deg, ${catColor}22 0%, ${catColor}08 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: catColor }}>
+          {(() => { const Icon = CATEGORY_ICONS[post.category]; return Icon ? <Icon size={large ? 32 : 24} /> : <IcoPen size={large ? 28 : 20} />; })()}
         </div>
       )}
 

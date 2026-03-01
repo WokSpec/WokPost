@@ -3,6 +3,7 @@ import { FeedCard, NewsletterBar } from '@/components/FeedComponents';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import type { FeedItem } from '@/lib/feed/types';
+import { IcoFire, IcoPen } from '@/components/Icons';
 
 export const metadata: Metadata = {
   title: 'Trending',
@@ -82,7 +83,7 @@ export default async function TrendingPage() {
         <div className="orb orb-blue" style={{ width: 500, height: 500, top: -250, right: -150, opacity: 0.18 }} aria-hidden="true" />
         <div className="site-container" style={{ position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: '1.2rem' }}>🔥</span>
+            <IcoFire size={18} />
             <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>Trending now</span>
           </div>
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.5rem, 3.5vw, 2.25rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: 10 }}>
@@ -131,7 +132,7 @@ export default async function TrendingPage() {
                   <div style={{ display: 'flex', gap: 16, marginTop: 18, fontSize: '0.72rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>
                     {hero.score && <span>↑ {hero.score}</span>}
                     {hero.aiScore > 0 && <span>AI {Math.round(hero.aiScore * 100)}%</span>}
-                    <span>🔥 Trending</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><IcoFire size={12} /> Trending</span>
                   </div>
                 </div>
                 {hero.thumbnail && (
@@ -148,8 +149,8 @@ export default async function TrendingPage() {
           <div style={{ marginBottom: '3rem', padding: '1.5rem', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
               <div>
-                <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
-                  ✍️ Editor picks
+                <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', fontFamily: 'var(--font-mono)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <IcoPen size={11} /> Editor picks
                 </div>
                 <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.025em' }}>
                   From the Editor

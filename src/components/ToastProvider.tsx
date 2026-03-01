@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { IcoCheck, IcoX, IcoInfo } from './Icons';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -35,7 +36,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     timers.current.set(id, timer);
   }, [dismiss]);
 
-  const icons: Record<ToastType, string> = { success: '✓', error: '✕', info: 'ℹ' };
+  const icons: Record<ToastType, React.ReactNode> = {
+    success: <IcoCheck size={13} />,
+    error:   <IcoX size={13} />,
+    info:    <IcoInfo size={13} />,
+  };
 
   return (
     <ToastContext.Provider value={{ toast }}>

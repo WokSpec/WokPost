@@ -163,7 +163,7 @@ export function CommentsSection({ postId }: { postId: string }) {
             )}
             {success && (
               <span style={{ fontSize: '0.72rem', color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>
-                Comment posted ✓
+            Comment posted
               </span>
             )}
           </div>

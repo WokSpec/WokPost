@@ -7,6 +7,7 @@ import { ShareButtons } from '@/components/ShareButtons';
 import { TableOfContents } from '@/components/TableOfContents';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { IcoPen, CATEGORY_ICONS } from '@/components/Icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -223,8 +224,8 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={rp.cover_image} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', display: 'block' }} />
                         ) : (
-                          <div style={{ height: 80, background: `linear-gradient(135deg, ${rpColor}22 0%, ${rpColor}08 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
-                            ✍️
+                          <div style={{ height: 80, background: `linear-gradient(135deg, ${rpColor}22 0%, ${rpColor}08 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: rpColor }}>
+                            {(() => { const Icon = CATEGORY_ICONS[rp.category]; return Icon ? <Icon size={22} /> : <IcoPen size={20} />; })()}
                           </div>
                         )}
                         <div className="related-post-card-body">

@@ -117,10 +117,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
         </div>
       </div>
 
-      {/* Category strip */}
-      <div className="site-container">
-        <CategoryStrip active={category} />
-      </div>
+      {/* Category strip — full-width sticky bar, no container wrapper */}
+      <CategoryStrip active={category} />
 
       {/* Feed */}
       <div className="site-container" style={{ paddingTop: 8, paddingBottom: 48 }}>

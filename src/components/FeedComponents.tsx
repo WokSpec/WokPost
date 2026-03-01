@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import { NewsletterFormInline } from './NewsletterForm';
 import { AuthButton } from './AuthButton';
 import { useToast } from './ToastProvider';
 import { VoteButton } from './VoteButton';
+import { CATEGORY_ICONS, IcoChevronLeft, IcoChevronRight } from './Icons';
 
 /* ── SVG Icons ──────────────────────────────────────────────────────── */
 export const IconBookmark = ({ filled }: { filled?: boolean }) => (
@@ -100,26 +101,94 @@ export function SiteHeader() {
 }
 
 /* ── Category Strip ──────────────────────────────────────────────────── */
-export function CategoryStrip({ active }: { active?: string }) {
+export function CategoryStrip({ active, counts }: { active?: string; counts?: Record<string, number> }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 8);
+    setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', checkScroll); ro.disconnect(); };
+  }, [checkScroll]);
+
+  const scroll = (dir: 1 | -1) => {
+    scrollRef.current?.scrollBy({ left: dir * 240, behavior: 'smooth' });
+  };
+
+  const cats = Object.entries(CATEGORIES);
+
   return (
-    <div className="cat-strip" role="navigation" aria-label="Browse categories">
-      <Link
-        href="/"
-        className={`cat-pill${!active ? ' active' : ''}`}
-        style={{ '--cat-color': 'var(--text-muted)' } as React.CSSProperties}
-      >
-        All
-      </Link>
-      {Object.entries(CATEGORIES).map(([id, cat]) => (
+    <div className="cat-bar" role="navigation" aria-label="Browse categories">
+      {/* Scroll left */}
+      {canLeft && (
+        <button className="cat-scroll-btn cat-scroll-left" onClick={() => scroll(-1)} aria-label="Scroll left">
+          <IcoChevronLeft size={14} />
+        </button>
+      )}
+
+      <div className="cat-strip" ref={scrollRef}>
+        {/* All */}
         <Link
-          key={id}
-          href={`/${id}`}
-          className={`cat-pill${active === id ? ' active' : ''}`}
-          style={{ '--cat-color': cat.color } as React.CSSProperties}
+          href="/"
+          className={`cat-pill${!active ? ' active' : ''}`}
+          style={{ '--cat-color': 'var(--text-muted)' } as React.CSSProperties}
         >
-          {cat.label}
+          <span className="cat-pill-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+          </span>
+          <span className="cat-pill-label">All</span>
+          {counts && (
+            <span className="cat-pill-count">{Object.values(counts).reduce((a, b) => a + b, 0)}</span>
+          )}
         </Link>
-      ))}
+
+        {cats.map(([id, cat]) => {
+          const Icon = CATEGORY_ICONS[id];
+          const count = counts?.[id];
+          return (
+            <Link
+              key={id}
+              href={`/${id}`}
+              className={`cat-pill${active === id ? ' active' : ''}`}
+              style={{ '--cat-color': cat.color } as React.CSSProperties}
+            >
+              {Icon && (
+                <span className="cat-pill-icon">
+                  <Icon size={13} />
+                </span>
+              )}
+              <span className="cat-pill-label">{cat.label}</span>
+              {count !== undefined && count > 0 && (
+                <span className="cat-pill-count">{count}</span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Scroll right */}
+      {canRight && (
+        <button className="cat-scroll-btn cat-scroll-right" onClick={() => scroll(1)} aria-label="Scroll right">
+          <IcoChevronRight size={14} />
+        </button>
+      )}
     </div>
   );
 }
