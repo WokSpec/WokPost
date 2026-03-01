@@ -24,11 +24,13 @@ type EditorialPost = {
   featured: number;
   published: number;
   views: number;
+  reading_time: number | null;
   created_at: string;
 };
 
-function readMins(content: string) {
-  return Math.max(1, Math.ceil(content.split(/\s+/).length / 200));
+function readMins(post: EditorialPost) {
+  if (post.reading_time) return post.reading_time;
+  return Math.max(1, Math.ceil(post.content.split(/\s+/).length / 200));
 }
 
 function timeAgo(iso: string) {
@@ -43,6 +45,7 @@ function timeAgo(iso: string) {
 export default async function EditorialIndex() {
   let posts: EditorialPost[] = [];
   let categories: string[] = [];
+  let totalViews = 0;
 
   try {
     const { getDB } = await import('@/lib/cloudflare');
@@ -53,6 +56,7 @@ export default async function EditorialIndex() {
       ).all() as { results: EditorialPost[] };
       posts = results;
       categories = [...new Set(posts.map(p => p.category))];
+      totalViews = posts.reduce((sum, p) => sum + (p.views ?? 0), 0);
     }
   } catch { /* no D1 at build */ }
 
@@ -72,6 +76,23 @@ export default async function EditorialIndex() {
         <p style={{ fontSize: '1rem', color: 'var(--text-muted)', maxWidth: 560, lineHeight: 1.7 }}>
           Long-form analysis, perspectives, and deep dives from our editors — on AI, crypto, science, markets, and the technologies shaping how we work.
         </p>
+
+        {/* Stats row */}
+        {posts.length > 0 && (
+          <div style={{ display: 'flex', gap: '2rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
+            {[
+              { label: 'Posts', value: posts.length.toString() },
+              { label: 'Categories', value: categories.length.toString() },
+              { label: 'Total reads', value: totalViews >= 1000 ? `${(totalViews / 1000).toFixed(1)}k` : totalViews.toString() },
+              { label: 'Featured', value: featured.length.toString() },
+            ].map(s => (
+              <div key={s.label} style={{ fontFamily: 'var(--font-mono)' }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{s.value}</span>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-faint)', marginLeft: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Category filter pills */}
         {categories.length > 1 && (
@@ -139,6 +160,40 @@ export default async function EditorialIndex() {
             {rest.filter(p => !categories.includes(p.category)).map(post => (
               <EditorialCard key={post.id} post={post} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* About the Editor */}
+      {posts.length > 0 && (
+        <section style={{ marginTop: '4rem', padding: '2.5rem', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 18, display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+            E
+          </div>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>
+              About the editor
+            </div>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.03em', marginBottom: 10 }}>
+              Eral
+            </div>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.75, marginBottom: '1.25rem', maxWidth: 560 }}>
+              Eral writes about technology, science, business, and culture from the premise that most things are more complicated than we pretend. A recovering academic with opinions about AI interpretability, urban policy, and the video game as art form. Based somewhere with good Wi-Fi.
+            </p>
+            <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+              <div style={{ fontFamily: 'var(--font-mono)' }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{posts.length}</span>
+                <span style={{ fontSize: '0.62rem', color: 'var(--text-faint)', marginLeft: 5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>essays</span>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)' }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{categories.length}</span>
+                <span style={{ fontSize: '0.62rem', color: 'var(--text-faint)', marginLeft: 5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>topics</span>
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)' }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{totalViews >= 1000 ? `${(totalViews / 1000).toFixed(1)}k` : totalViews}</span>
+                <span style={{ fontSize: '0.62rem', color: 'var(--text-faint)', marginLeft: 5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>reads</span>
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -232,7 +287,7 @@ function EditorialCard({ post, large = false }: { post: EditorialPost; large?: b
           <span style={{ color: 'var(--border-strong)', fontSize: '0.65rem' }}>·</span>
           <span style={{ fontSize: '0.65rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>{timeAgo(post.created_at)}</span>
           <span style={{ color: 'var(--border-strong)', fontSize: '0.65rem' }}>·</span>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>{readMins(post.content)}m read</span>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>{readMins(post)}m read</span>
           {post.views > 0 && (
             <>
               <span style={{ color: 'var(--border-strong)', fontSize: '0.65rem' }}>·</span>

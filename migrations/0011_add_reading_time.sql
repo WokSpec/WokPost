@@ -1,0 +1,4 @@
+-- Migration 0011: Add reading_time column to editorial_posts
+-- This was already applied manually via wrangler d1 execute --command
+-- Included here for schema documentation
+-- ALTER TABLE editorial_posts ADD COLUMN reading_time INTEGER NOT NULL DEFAULT 5;

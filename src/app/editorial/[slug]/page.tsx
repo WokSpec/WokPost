@@ -14,6 +14,7 @@ interface PostRow {
   id: string; slug: string; title: string; excerpt: string; content: string;
   cover_image: string | null; category: string; tags: string; author_name: string;
   author_avatar: string | null; published: number; featured: number; views: number;
+  reading_time: number | null;
   created_at: string; updated_at: string;
 }
 
@@ -68,7 +69,7 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
   const catColor = cat?.color ?? 'var(--accent)';
   const tags: string[] = (() => { try { return JSON.parse(post.tags); } catch { return []; } })();
   const wordCount = post.content.replace(/<[^>]+>/g, '').split(/\s+/).length;
-  const readMins = Math.max(1, Math.ceil(wordCount / 200));
+  const readMins = post.reading_time ?? Math.max(1, Math.ceil(wordCount / 200));
   const publishDate = new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
@@ -159,6 +160,27 @@ export default async function EditorialPage({ params }: { params: Promise<{ slug
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: '1.75rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
               <VoteButton postId={post.id} />
               <ShareButtons title={post.title} />
+            </div>
+
+            {/* About the Author */}
+            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                {post.author_name.charAt(0)}
+              </div>
+              <div>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                  Written by
+                </div>
+                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.025em', marginBottom: 6 }}>
+                  {post.author_name}
+                </div>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.7, margin: '0 0 10px' }}>
+                  Eral writes long-form analysis on technology, science, business, and culture. A recovering academic covering the ideas that matter most and the ones we should be paying more attention to.
+                </p>
+                <Link href="/editorial" style={{ fontSize: '0.72rem', color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-mono)' }}>
+                  All posts by {post.author_name} →
+                </Link>
+              </div>
             </div>
 
             {/* Comments */}

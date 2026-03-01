@@ -61,6 +61,7 @@ export function SiteHeader() {
           <Link href="/" className="nav-link">Home</Link>
           <Link href="/editorial" className="nav-link" data-hide-mobile="">Editorial</Link>
           <Link href="/trending" className="nav-link" data-hide-mobile="">Trending</Link>
+          <Link href="/discover" className="nav-link" data-hide-mobile="">Discover</Link>
           <Link href="/newsletter" className="nav-link" data-hide-mobile="">Newsletter</Link>
         </nav>
         <div className="header-actions">
@@ -357,7 +358,9 @@ export function SiteFooter() {
             <Link href="/business" className="footer-link">Business</Link>
           </div>
           <div>
-            <div className="footer-col-title">Account</div>
+            <div className="footer-col-title">Explore</div>
+            <Link href="/discover" className="footer-link">Discover</Link>
+            <Link href="/stats" className="footer-link">Stats</Link>
             <Link href="/newsletter" className="footer-link">Newsletter</Link>
             <Link href="/search" className="footer-link">Search</Link>
             <Link href="/profile" className="footer-link">Profile</Link>
