@@ -35,6 +35,17 @@ export async function GET(req: Request) {
   const offset = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10));
   const authorOnly = searchParams.get('author') === '1';
 
+  // Diagnostic: expose what env looks like
+  if (searchParams.get('_diag') === '1') {
+    // @ts-expect-error
+    const env = globalThis.__env__;
+    return Response.json({
+      envKeys: env ? Object.keys(env) : null,
+      hasDB: !!(env?.DB),
+      dbType: env?.DB ? typeof env.DB : 'none',
+    });
+  }
+
   const db = getDB();
   if (!db) return NextResponse.json({ posts: [], total: 0, _debug: 'no_db' });
 
