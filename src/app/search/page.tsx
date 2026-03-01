@@ -126,11 +126,14 @@ function SearchResults() {
       {!loading && !searched && (
         <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-faint)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔍</div>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Search across all categories — AI research, business, science, and more.
           </p>
+          <div style={{ marginBottom: '0.5rem', fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--font-mono)', color: 'var(--text-faint)' }}>
+            Popular searches
+          </div>
           <div className="search-suggestions">
-            {['AI breakthroughs', 'climate change', 'startup funding', 'CRISPR', 'quantum computing'].map(s => (
+            {['AI safety', 'climate migration', 'loneliness epidemic', 'housing crisis', 'deep work', 'open source AI', 'CRISPR', 'startup funding', 'quantum computing', 'mental health'].map(s => (
               <button
                 key={s}
                 className="search-suggestion-pill"
