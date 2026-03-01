@@ -29,7 +29,41 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
 
   const cat = CATEGORIES[category as Category];
   const sources = FEED_SOURCES.filter(s => s.defaultCategory === category);
-  const items = await fetchAllSources(sources).catch(() => []);
+  let items = await fetchAllSources(sources).catch(() => []);
+
+  // Inject editorial posts for this category from D1
+  try {
+    const { getDB } = await import('@/lib/cloudflare');
+    const db = await getDB();
+    if (db) {
+      const { results: editPosts } = await db.prepare(
+        'SELECT * FROM editorial_posts WHERE published = 1 AND category = ?1 ORDER BY featured DESC, created_at DESC LIMIT 10'
+      ).bind(category).all() as { results: Record<string, unknown>[] };
+      const editorialItems = editPosts.map(ep => ({
+        id: String(ep.id),
+        title: String(ep.title),
+        url: `/editorial/${ep.slug}`,
+        sourceId: 'wokpost-editorial',
+        sourceName: 'WokPost',
+        sourceType: 'editorial' as const,
+        sourceTier: 1 as const,
+        contentType: 'editorial' as const,
+        category: String(ep.category ?? category),
+        aiTagged: false,
+        aiScore: 8,
+        publishedAt: String(ep.created_at ?? new Date().toISOString()),
+        summary: String(ep.excerpt ?? ''),
+        tags: [],
+        thumbnail: ep.cover_image ? String(ep.cover_image) : undefined,
+        score: undefined,
+        commentCount: undefined,
+        authorName: String(ep.author_name ?? ''),
+        authorAvatar: ep.author_avatar ? String(ep.author_avatar) : undefined,
+        editorialSlug: String(ep.slug),
+      }));
+      items = [...editorialItems, ...items];
+    }
+  } catch { /* no D1 at build time */ }
 
   return (
     <>
