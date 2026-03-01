@@ -185,9 +185,10 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
   };
 
   // Content type counts
-  const storiesCount = allItems.filter(i => i.contentType === 'story').length;
-  const papersCount  = allItems.filter(i => i.contentType === 'paper').length;
-  const reposCount   = allItems.filter(i => i.contentType === 'repo').length;
+  const storiesCount    = allItems.filter(i => i.contentType === 'story').length;
+  const papersCount     = allItems.filter(i => i.contentType === 'paper').length;
+  const reposCount      = allItems.filter(i => i.contentType === 'repo').length;
+  const editorialCount  = allItems.filter(i => i.contentType === 'editorial').length;
 
   return (
     <div>
@@ -275,13 +276,14 @@ export function InteractiveFeed({ initialItems, category, initialTotal = 0 }: Pr
       </div>
 
       {/* Content-type filter */}
-      {(papersCount > 0 || reposCount > 0) && (
+      {(papersCount > 0 || reposCount > 0 || editorialCount > 0) && (
         <div className="type-filter">
           {([
-            ['all',   'All',     allItems.length],
-            ['story', 'Stories', storiesCount],
-            ['paper', 'Papers',  papersCount],
-            ['repo',  'Repos',   reposCount],
+            ['all',       'All',       allItems.length],
+            ['story',     'Stories',   storiesCount],
+            ['editorial', 'Editorial', editorialCount],
+            ['paper',     'Papers',    papersCount],
+            ['repo',      'Repos',     reposCount],
           ] as [ContentType | 'all', string, number][]).filter(([id, , count]) => id === 'all' || count > 0).map(([id, label, count]) => (
             <button
               key={id}
