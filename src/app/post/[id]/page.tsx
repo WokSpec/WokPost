@@ -48,8 +48,7 @@ function rowToItem(row: Record<string, any>): FeedItem {
 async function resolveItem(decoded: string): Promise<FeedItem | undefined> {
   // 1. Try D1 (persistent, always works for items seen before)
   try {
-    // @ts-expect-error — Cloudflare D1 binding
-    const db = globalThis.__env__?.DB as import('@cloudflare/workers-types').D1Database | undefined;
+    const db = await (async () => { try { const { getDB } = await import('@/lib/cloudflare'); return await getDB(); } catch { return undefined; } })();
     if (db) {
       const row = await db.prepare('SELECT * FROM feed_items WHERE id = ?').bind(decoded).first();
       if (row) return rowToItem(row as Record<string, unknown>);
@@ -58,8 +57,7 @@ async function resolveItem(decoded: string): Promise<FeedItem | undefined> {
 
   // 2. Try KV full feed cache
   try {
-    // @ts-expect-error — Cloudflare KV binding
-    const kv = globalThis.__env__?.FEED_CACHE;
+    const kv = await (async () => { try { const { getKV } = await import('@/lib/cloudflare'); return await getKV(); } catch { return undefined; } })();
     if (kv) {
       const cached = await kv.get('feed:all', 'json') as FeedItem[] | null;
       if (cached) {
@@ -78,8 +76,7 @@ async function resolveItem(decoded: string): Promise<FeedItem | undefined> {
 async function getRelatedItems(category: Category, excludeId: string): Promise<FeedItem[]> {
   // 1. Try D1 for recent same-category items
   try {
-    // @ts-expect-error — Cloudflare D1 binding
-    const db = globalThis.__env__?.DB as import('@cloudflare/workers-types').D1Database | undefined;
+    const db = await (async () => { try { const { getDB } = await import('@/lib/cloudflare'); return await getDB(); } catch { return undefined; } })();
     if (db) {
       const { results } = await db
         .prepare(`SELECT * FROM feed_items WHERE category = ? AND id != ? ORDER BY published_at DESC LIMIT 6`)
@@ -91,8 +88,7 @@ async function getRelatedItems(category: Category, excludeId: string): Promise<F
 
   // 2. Fallback: KV full feed
   try {
-    // @ts-expect-error — Cloudflare KV binding
-    const kv = globalThis.__env__?.FEED_CACHE;
+    const kv = await (async () => { try { const { getKV } = await import('@/lib/cloudflare'); return await getKV(); } catch { return undefined; } })();
     if (kv) {
       const cached = await kv.get('feed:all', 'json') as FeedItem[] | null;
       if (cached) return cached.filter(i => i.category === category && i.id !== excludeId).slice(0, 6);

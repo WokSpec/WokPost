@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
+import { getDB } from '@/lib/cloudflare';
 
 function isValidEmail(e: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 }
 
-function getDB(): D1Database | null {
-  try {
-    // @ts-expect-error
-    return globalThis.__env__?.DB ?? null;
-  } catch { return null; }
-}
 
 export async function POST(req: Request) {
   const raw = await req.text().catch(() => '');
@@ -30,7 +25,7 @@ export async function POST(req: Request) {
 
   const wokspecUpdates = body.wokspec_updates === 1 || body.wokspec_updates === true ? 1 : 0;
 
-  const db = getDB();
+  const db = await getDB();
   if (db) {
     try {
       await db.prepare(

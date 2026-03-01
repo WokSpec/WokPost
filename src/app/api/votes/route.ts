@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getDB } from '@/lib/cloudflare';
 
-function getDB(): D1Database | null {
-  try {
-    // @ts-expect-error — Cloudflare D1 binding
-    return globalThis.__env__?.DB ?? null;
-  } catch { return null; }
-}
 
 function hashIP(ip: string): string {
   // Simple non-cryptographic hash sufficient for rate-limiting / dedup
@@ -28,7 +23,7 @@ export async function GET(req: Request) {
   const postId = searchParams.get('post_id');
   if (!postId) return NextResponse.json({ error: 'post_id required' }, { status: 400 });
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ count: 0, voted: false });
 
   const ipHash = hashIP(getClientIP(req));
@@ -54,7 +49,7 @@ export async function POST(req: Request) {
   const postId = String(body.post_id ?? '').trim().slice(0, 300);
   if (!postId) return NextResponse.json({ error: 'post_id required' }, { status: 400 });
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const ipHash = hashIP(getClientIP(req));

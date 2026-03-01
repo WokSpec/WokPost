@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
+import { getKV } from '@/lib/cloudflare';
 
 const SYMBOLS = ['SPY','QQQ','NVDA','AAPL','MSFT','GOOGL','META','AMZN','TSLA','BTC-USD','ETH-USD'];
 const CACHE_TTL = 300;
 
-function getKV(): KVNamespace | null {
-  try {
-    // @ts-expect-error
-    return globalThis.__env__?.FEED_CACHE ?? null;
-  } catch { return null; }
+async function getCacheKV(): Promise<KVNamespace | null> {
+  return (await getKV()) ?? null;
 }
 
 export interface StockQuote {
@@ -47,7 +45,7 @@ async function fetchQuotes(): Promise<StockQuote[]> {
 }
 
 export async function GET() {
-  const kv = getKV();
+  const kv = await getCacheKV();
   const cacheKey = 'stocks:quotes:v1';
 
   if (kv) {

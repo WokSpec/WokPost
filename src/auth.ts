@@ -38,8 +38,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account }) {
       if (!user.id || !user.email) return;
       try {
-        // @ts-expect-error — Cloudflare D1 injected at runtime
-        const db = globalThis.__env__?.DB;
+        const { getDB } = await import('@/lib/cloudflare');
+        const db = await getDB();
         if (!db) return;
         await db
           .prepare(

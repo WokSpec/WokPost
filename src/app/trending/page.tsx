@@ -13,8 +13,7 @@ export const revalidate = 900; // 15 min
 async function getTrending(): Promise<FeedItem[]> {
   // Try KV cache first (same data the main feed uses)
   try {
-    // @ts-expect-error — Cloudflare KV injected at runtime
-    const kv = globalThis.__env__?.FEED_CACHE;
+    const kv = await (async () => { try { const { getKV } = await import('@/lib/cloudflare'); return await getKV(); } catch { return undefined; } })();
     if (kv) {
       const cached = await kv.get('feed:all', 'json') as FeedItem[] | null;
       if (cached && cached.length > 0) return cached;
@@ -23,8 +22,7 @@ async function getTrending(): Promise<FeedItem[]> {
 
   // Try D1 as fallback
   try {
-    // @ts-expect-error — Cloudflare D1
-    const db = globalThis.__env__?.DB as D1Database | undefined;
+    const db = await (async () => { try { const { getDB } = await import('@/lib/cloudflare'); return await getDB(); } catch { return undefined; } })();
     if (db) {
       const { results } = await db.prepare(
         `SELECT id,title,url,source_id,source_name,source_type,source_tier,content_type,

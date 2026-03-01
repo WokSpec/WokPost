@@ -22,8 +22,7 @@ type HistoryRow = {
 };
 
 async function getUserData(userId: string) {
-  // @ts-expect-error — Cloudflare D1 injected at runtime
-  const db = globalThis.__env__?.DB as D1Database | undefined;
+  const db = await (async () => { try { const { getDB } = await import('@/lib/cloudflare'); return await getDB(); } catch { return undefined; } })();
   if (!db) return { bookmarks: [], savedFeeds: [], history: [] };
   const [bm, sf, hist] = await Promise.all([
     db.prepare(`SELECT * FROM bookmarks WHERE user_id = ?1 ORDER BY bookmarked_at DESC`).bind(userId).all(),

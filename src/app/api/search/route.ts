@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-
-function getDB() {
-  // @ts-expect-error — Cloudflare D1 injected at runtime
-  return globalThis.__env__?.DB as D1Database | undefined;
-}
+import { getDB } from '@/lib/cloudflare';
 
 // GET /api/search?q=<query>&limit=<n>&offset=<n>
 export async function GET(req: Request) {
@@ -16,7 +12,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ results: [], total: 0, query: q });
   }
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ results: [], total: 0, query: q });
 
   const pattern = `%${q}%`;

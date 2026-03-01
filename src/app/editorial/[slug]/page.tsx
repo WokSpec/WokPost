@@ -16,8 +16,7 @@ interface PostRow {
 
 async function getPost(slug: string): Promise<PostRow | null> {
   try {
-    // @ts-expect-error — Cloudflare D1 injected at runtime
-    const db = globalThis.__env__?.DB as D1Database | undefined;
+    const db = await (async () => { try { const { getDB } = await import('@/lib/cloudflare'); return await getDB(); } catch { return undefined; } })();
     if (!db) return null;
     const row = await db.prepare(
       'SELECT * FROM editorial_posts WHERE (slug = ?1 OR id = ?1) AND published = 1'

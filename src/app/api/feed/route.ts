@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import { FEED_SOURCES } from '@/lib/feed/sources';
 import { fetchAllSources } from '@/lib/feed/aggregator';
 import type { Category, FeedItem } from '@/lib/feed/types';
+import { getDB, getKV } from '@/lib/cloudflare';
 
 // ── Upsert fetched items into D1 for persistent /post/[id] lookup ────────────
 async function persistItems(items: FeedItem[]) {
   try {
-    // @ts-expect-error — Cloudflare D1 injected at runtime
-    const db = globalThis.__env__?.DB as import('@cloudflare/workers-types').D1Database | undefined;
+    const db = await getDB();
     if (!db) return;
     // Batch in chunks of 50
     for (let i = 0; i < items.length; i += 50) {
@@ -47,8 +47,7 @@ export async function GET(req: Request) {
   let items: FeedItem[] | undefined;
   let cacheHit = false;
   try {
-    // @ts-expect-error — Cloudflare env injected at runtime
-    const kv = globalThis.__env__?.FEED_CACHE;
+    const kv = await getKV();
     const cacheKey = `feed:${category ?? 'all'}`;
     if (kv) {
       const cached = await kv.get(cacheKey, 'json') as FeedItem[] | null;
@@ -64,8 +63,7 @@ export async function GET(req: Request) {
 
     // Write to KV (30 min)
     try {
-      // @ts-expect-error
-      const kv = globalThis.__env__?.FEED_CACHE;
+      const kv = await getKV();
       if (kv) await kv.put(`feed:${category ?? 'all'}`, JSON.stringify(items), { expirationTtl: 1800 });
     } catch { /* no KV in local dev */ }
   }
@@ -77,8 +75,7 @@ export async function GET(req: Request) {
 
   // Inject editorial posts from D1 (always fresh, not cached)
   try {
-    // @ts-expect-error — Cloudflare D1
-    const db = globalThis.__env__?.DB as D1Database | undefined;
+    const db = await getDB();
     if (db) {
       const editQuery = category
         ? 'SELECT * FROM editorial_posts WHERE published = 1 AND category = ?1 ORDER BY featured DESC, created_at DESC LIMIT 20'

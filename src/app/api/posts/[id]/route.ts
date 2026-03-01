@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getDB } from '@/lib/cloudflare';
 
-function getDB() {
-  try {
-    // @ts-expect-error — Cloudflare D1 injected at runtime
-    return globalThis.__env__?.DB as D1Database | undefined;
-  } catch { return undefined; }
-}
 
 async function getSession(): Promise<Record<string, unknown> | null> {
   try {
@@ -18,7 +13,7 @@ async function getSession(): Promise<Record<string, unknown> | null> {
 // Add ?edit=1 to bypass published filter (author only)
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const url = new URL(req.url);
@@ -52,7 +47,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   // Verify ownership
@@ -90,7 +85,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const existing = await db.prepare('SELECT author_id FROM editorial_posts WHERE id = ?1').bind(id).first();

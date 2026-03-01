@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getDB } from '@/lib/cloudflare';
 
-
-function getDB(): D1Database | null {
-  try {
-    // @ts-expect-error — Cloudflare env
-    return globalThis.__env__?.DB ?? null;
-  } catch { return null; }
-}
 
 function getIP(req: Request) {
   return req.headers.get('cf-connecting-ip')
@@ -31,7 +25,7 @@ export async function GET(req: Request) {
   const postId = searchParams.get('post_id');
   if (!postId) return NextResponse.json({ error: 'post_id required' }, { status: 400 });
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ comments: [] });
 
   const { results } = await db.prepare(
@@ -56,7 +50,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'post_id, author_name, and content required' }, { status: 400 });
   }
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   // Rate limit: 5 comments per IP per hour

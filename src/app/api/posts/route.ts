@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-
-function getDB() {
-  try {
-    // @ts-expect-error — Cloudflare D1 injected at runtime
-    return globalThis.__env__?.DB as D1Database | undefined;
-  } catch { return undefined; }
-}
+import { getDB } from '@/lib/cloudflare';
 
 async function getSession(): Promise<Record<string, unknown> | null> {
   try {
@@ -46,8 +40,8 @@ export async function GET(req: Request) {
     });
   }
 
-  const db = getDB();
-  if (!db) return NextResponse.json({ posts: [], total: 0, _debug: 'no_db' });
+  const db = await getDB();
+  if (!db) return NextResponse.json({ posts: [], total: 0 });
 
   // Only call auth() when needed (author view)
   let isAuthor = false;
@@ -81,7 +75,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ posts: results, total: countRow?.cnt ?? 0 });
   } catch (e) {
-    return NextResponse.json({ posts: [], total: 0, _debug: 'query_error', error: String(e) });
+    return NextResponse.json({ posts: [], total: 0, error: String(e) });
   }
 }
 
@@ -105,7 +99,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'title and content are required' }, { status: 400 });
   }
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const id = nanoid();

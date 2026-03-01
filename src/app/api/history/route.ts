@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
+import { getDB } from '@/lib/cloudflare';
 
 async function getSession(): Promise<Record<string, unknown> | null> {
   try {
     const { auth } = await import('@/auth');
     return await getSession();
   } catch { return null; }
-}
-
-function getDB() {
-  // @ts-expect-error — Cloudflare D1 injected at runtime
-  return globalThis.__env__?.DB as D1Database | undefined;
 }
 
 function nanoid() {
@@ -21,7 +17,7 @@ export async function GET() {
   const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ history: [] });
 
   const { results } = await db
@@ -49,7 +45,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'item_id, item_title, item_url required' }, { status: 400 });
   }
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ ok: true }); // silently succeed
 
   const id = nanoid();
@@ -69,7 +65,7 @@ export async function DELETE() {
   const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ ok: true });
 
   await db.prepare('DELETE FROM read_history WHERE user_id = ?1').bind(session.user.id).run();

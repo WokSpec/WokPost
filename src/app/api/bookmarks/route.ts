@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getDB } from '@/lib/cloudflare';
 
 async function getSession(): Promise<Record<string, unknown> | null> {
   try {
@@ -7,17 +8,12 @@ async function getSession(): Promise<Record<string, unknown> | null> {
   } catch { return null; }
 }
 
-function getDB() {
-  // @ts-expect-error — Cloudflare D1 injected at runtime
-  return globalThis.__env__?.DB as D1Database | undefined;
-}
-
 // GET /api/bookmarks — list current user's bookmarks
 export async function GET() {
   const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ bookmarks: [] });
 
   const { results } = await db
@@ -49,7 +45,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   const id = crypto.randomUUID();
@@ -88,7 +84,7 @@ export async function DELETE(req: Request) {
   const itemId = searchParams.get('item_id');
   if (!itemId) return NextResponse.json({ error: 'Missing item_id' }, { status: 400 });
 
-  const db = getDB();
+  const db = await getDB();
   if (!db) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
 
   await db
